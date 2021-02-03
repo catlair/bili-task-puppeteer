@@ -1,0 +1,34 @@
+{
+  "appenders": {
+    "runInfo": {
+      "type": "console"
+    },
+    "everything": {
+      "type": "file",
+      "filename": "logs/runInfo.log"
+    },
+    "test": {
+      "type": "file",
+      "filename": "logs/test.log"
+    },
+    "errorFile": {
+      "type": "file",
+      "filename": "logs/errors.log"
+    },
+    "errors": {
+      "type": "logLevelFilter",
+      "level": "ERROR",
+      "appender": "errorFile"
+    }
+  },
+  "categories": {
+    "default": {
+      "appenders": ["errors", "runInfo", "everything"],
+      "level": "DEBUG"
+    },
+    "test": {
+      "appenders": ["test"],
+      "level": "DEBUG"
+    }
+  }
+}

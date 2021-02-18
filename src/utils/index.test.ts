@@ -24,9 +24,6 @@ describe('cookie工具测试', () => {
 
   test('cookie字符串中获取id', () => {
     expect(getUserId('DedeUserID=12345; abc=123')).toBe(12345);
-  });
-
-  test('cookie字符串中获取id失败', () => {
     expect(getUserId('abc=123')).toBe(0);
   });
 });
@@ -42,11 +39,24 @@ describe('数处理', () => {
       value: 0,
       area: 2,
     });
+    expect(distributedRandom([0, 0, 0])).toEqual({
+      value: 0,
+      area: 0,
+    });
+    expect(distributedRandom([])).toEqual({
+      value: 0,
+      area: 0,
+    });
   });
 
   test('分页选择', () => {
     //从0开始数,50个一页,所以第一页0-49
     expect(paginationSelect(50, 50)).toEqual({
+      page: 1,
+      num: 0,
+    });
+    //默认参数
+    expect(paginationSelect(10)).toEqual({
       page: 1,
       num: 0,
     });

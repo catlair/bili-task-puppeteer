@@ -8,7 +8,7 @@ const blockResourcesPlugin = require('puppeteer-extra-plugin-block-resources')({
 puppeteer.use(require('puppeteer-extra-plugin-stealth')());
 puppeteer.use(require('puppeteer-extra-plugin-anonymize-ua')());
 puppeteer.use(require('./plugins/eval-plugin')());
-// puppeteer.use(blockResourcesPlugin);
+puppeteer.use(blockResourcesPlugin);
 
 export default async function (): Promise<Browser> {
   return puppeteer.launch({

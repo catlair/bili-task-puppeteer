@@ -3,6 +3,7 @@ import { Page } from 'puppeteer';
 import { JuryVoteOption } from '../interface/Jury';
 import * as _ from 'lodash';
 import { getLogger } from 'log4js';
+import prohibitWords from '../config/prohibitWords';
 
 const logger = getLogger('jury');
 
@@ -39,10 +40,18 @@ class Judgement {
     await this.page.waitForTimeout(_.random(3000, 6000));
     await this.closeSummary();
     await this.page.waitForTimeout(_.random(3000, 6000));
-    await this.doVote(this.clickStartBtn.bind(this));
+    try {
+      await this.doVote(this.clickStartBtn.bind(this));
+    } catch (error) {
+      logger.error('执行过程发生异常', error);
+    }
     while (this.isRun === 1) {
-      await this.page.waitForTimeout(_.random(3000, 7000));
-      await this.doVote(this.goNext.bind(this));
+      try {
+        await this.page.waitForTimeout(_.random(3000, 7000));
+        await this.doVote(this.goNext.bind(this));
+      } catch (error) {
+        logger.error('执行过程发生异常', error);
+      }
     }
     return this.isRun;
   }
@@ -98,9 +107,9 @@ class Judgement {
      */
     try {
       const {
-        data: { originContent, voteDelete, voteRule },
+        data: { originContent = '', voteDelete = 0, voteRule = 0, id },
       } = await juryCaseWait;
-
+      logger.info('获取到案件:', id);
       mergeData({
         originContent,
         voteDelete,
@@ -159,7 +168,10 @@ class Judgement {
     voteOpinionBlue,
     voteOpinionRed,
   }: VoteDecisionOption): VoteType {
-    function containProhibit(words: string[], str: string): boolean {
+    function containProhibit(words: Array<any>, str: string): boolean {
+      if (!str) {
+        return false;
+      }
       return words.some(el => {
         return str.indexOf(el) !== -1;
       });
@@ -179,10 +191,7 @@ class Judgement {
 
     const banOfRed =
       voteOpinionRed?.opinion?.filter(el => el.vote === Vote['封禁']) || [];
-    const ban = containProhibit(
-      /*prohibitWords*/ ['东百人', '荷兰人', '兔蛆'],
-      originContent,
-    );
+    const ban = containProhibit(prohibitWords, originContent);
 
     //大家都说你
     if (ban && originContent.length < 6) {

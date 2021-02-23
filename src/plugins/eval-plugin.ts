@@ -1,8 +1,21 @@
-import { ElementHandle, Page, WaitForSelectorOptions } from 'puppeteer';
-import { isMatchString } from '../utils';
+import {
+  ElementHandle,
+  HTTPResponse,
+  MouseButton,
+  Page,
+  WaitForOptions,
+  WaitForSelectorOptions,
+} from 'puppeteer';
 import * as _ from 'lodash';
+import * as path from 'path';
 
 const { PuppeteerExtraPlugin } = require('puppeteer-extra-plugin');
+
+type ClickOptions = {
+  delay?: number;
+  button?: MouseButton;
+  clickCount?: number;
+};
 
 class Util {
   page: Page;
@@ -68,11 +81,12 @@ class Util {
    * 页面滚动到底部
    */
   async scrollDown() {
+    await this.addScriptLodash();
     await this.page.evaluate(() => {
       return new Promise(resolve => {
         let totalHeight = 0;
-        let distance = 100;
-        let timer = setInterval(() => {
+        const timer = setInterval(() => {
+          const distance = _.random(50, 130);
           let scrollHeight = document.body.scrollHeight;
           window.scrollBy(0, distance);
           totalHeight += distance;
@@ -85,36 +99,68 @@ class Util {
     });
   }
 
-  response(
-    match: string | RegExp,
-    options: { delay?: number } = {},
-  ): Promise<unknown> {
-    const { delay = 30000 } = options;
-
-    return new Promise((resolve, reject) => {
-      const resHandle = async res => {
-          const resUrl = await res.url();
-          if (!isMatchString(resUrl, match)) return;
-          if (!res.ok()) reject('响应状态失败');
-          let content = await res.text();
-          try {
-            content = JSON.parse(content);
-          } catch (error) {
-            try {
-              content = JSON.parse(content.split(/[()]/)[1]);
-            } catch (error) {}
+  /**
+   * 页面滚动到指定位置
+   */
+  async scroll(targetHeight: number) {
+    await this.addScriptLodash();
+    await this.page.evaluate(targetHeight => {
+      return new Promise(resolve => {
+        let totalHeight = 0;
+        const timer = setInterval(() => {
+          const distance = _.random(50, 130);
+          window.scrollBy(0, distance);
+          totalHeight += distance;
+          if (totalHeight >= targetHeight) {
+            clearInterval(timer);
+            resolve(0);
           }
-          this.page.off('response', resHandleBind);
-          resolve(content);
-        },
-        resHandleBind = resHandle.bind(this);
-      this.page.on('response', resHandleBind);
-      let timer = setTimeout(() => {
-        this.page.off('response', resHandleBind);
-        clearTimeout(timer);
-        reject(`timeout ${delay} ${match.toString()}`);
-      }, delay);
-    });
+        }, 100);
+      });
+    }, targetHeight);
+  }
+
+  async scrollByElement(selector: string) {
+    const el = await this.$wait(selector);
+    const { y, height } = await el.boundingBox();
+    return await this.scroll(y - height);
+  }
+
+  async clickWaitForNavigation(
+    selector: string,
+    clickOptions?: ClickOptions,
+    waitOptions?: WaitForOptions,
+  ): Promise<HTTPResponse> {
+    const [response] = await Promise.all([
+      this.page.waitForNavigation(waitOptions),
+      this.page.click(selector, clickOptions),
+    ]);
+    return response;
+  }
+
+  async waitForReqAndRes(
+    urlOrPredicate: string | Function | RegExp,
+    options?: { timeout?: number },
+  ) {
+    let tempUrlOrPredicate: string | Function;
+    (function () {
+      if (typeof urlOrPredicate === 'string') {
+        if (urlOrPredicate.startsWith('http')) {
+          tempUrlOrPredicate = r => r.url().includes(urlOrPredicate);
+          return;
+        }
+      }
+
+      if (_.isRegExp(urlOrPredicate)) {
+        tempUrlOrPredicate = r => urlOrPredicate.test(r.url());
+        return;
+      }
+    })();
+
+    return await Promise.all([
+      this.page.waitForRequest(tempUrlOrPredicate, options),
+      this.page.waitForResponse(tempUrlOrPredicate, options),
+    ]);
   }
 
   wt(min: number, max: number, unit: 'ms' | 's' | 'm' | 'h' = 's') {
@@ -132,6 +178,13 @@ class Util {
         return ran(min * 1000, max * 1000);
     }
   }
+
+  /** 页面增加lodash */
+  async addScriptLodash() {
+    await this.page.addScriptTag({
+      path: path.resolve(__dirname, '../lib/lodash.min.js'),
+    });
+  }
 }
 
 class EvalPlugin extends PuppeteerExtraPlugin {
@@ -143,7 +196,7 @@ class EvalPlugin extends PuppeteerExtraPlugin {
     return 'eval';
   }
 
-  async onPageCreated(page) {
+  async onPageCreated(page: Page) {
     page.util = new Util(page);
   }
 }

@@ -1,11 +1,15 @@
-import { JuryCaseDto, JuryVoteOpinionDto } from '../dto/Jury.dto';
+import { JuryVoteOpinionDto } from '../dto/Jury.dto';
 import { Page } from 'puppeteer';
 import { JuryVoteOption } from '../interface/Jury';
 import * as _ from 'lodash';
 import { getLogger } from 'log4js';
 import prohibitWords from '../config/prohibitWords';
+import { HTTPResponse } from 'puppeteer';
+import { jsonpToJson } from '../utils';
 
 const logger = getLogger('jury');
+
+const MAX_ERROR_COUNT = 4;
 
 type VoteType = JuryVoteOption['vote'];
 type VoteOpinion = JuryVoteOpinionDto['data'];
@@ -29,6 +33,9 @@ enum Vote {
 class Judgement {
   page: Page;
   isRun: number;
+  errorCount: number = 0;
+  voteGetErrorCount: number = 0;
+  isHomePage: boolean = true;
   constructor(page: Page) {
     this.page = page;
     //1 继续 -1 没有了 0 完成了
@@ -40,30 +47,34 @@ class Judgement {
     await this.page.waitForTimeout(_.random(3000, 6000));
     await this.closeSummary();
     await this.page.waitForTimeout(_.random(3000, 6000));
-    try {
-      await this.doVote(this.clickStartBtn.bind(this));
-    } catch (error) {
-      logger.error('执行过程发生异常', error);
-    }
+    await this.doVote();
     while (this.isRun === 1) {
       try {
         await this.page.waitForTimeout(_.random(3000, 7000));
-        await this.doVote(this.goNext.bind(this));
+        await this.doVote();
       } catch (error) {
-        logger.error('执行过程发生异常', error);
+        this.errorCount++;
+        logger.error('执行过程发生异常', this.errorCount, error);
+        if (this.errorCount > MAX_ERROR_COUNT) {
+          logger.fatal('致命异常: 异常次数过多,退出执行');
+          return;
+        }
       }
     }
     return this.isRun;
   }
 
-  async doVote(callHandle: () => {}) {
-    let data = await this.getJuryCaseInfo(callHandle);
+  async doVote() {
+    const data = await this.getJuryCaseInfo();
     if (this.isRun === -1) {
       logger.info('没有新的案件了');
       return;
     }
     if (this.isRun === 0) {
       logger.info('今日审核完成');
+      return;
+    }
+    if (!data) {
       return;
     }
     await this.voteHandle(data as VoteDecisionOption);
@@ -75,62 +86,76 @@ class Judgement {
   }
 
   async clickStartBtn() {
-    await this.page.click(
+    return await this.page.util.clickWaitForNavigation(
       '.cases-wrap .column.col1 .fjw-user.ban-modal button',
     );
   }
 
-  async getJuryCaseInfo(callHandle: () => {}) {
-    const juryCaseWait: Promise<JuryCaseDto> = this.page.util.response(
-        'credit/jury/juryCase?',
-      ),
-      juryVoteRedWait: Promise<JuryVoteOpinionDto> = this.page.util.response(
-        /credit\/jury\/vote\/opinion.*otype=1/,
-      ),
-      juryVoteBlueWait: Promise<JuryVoteOpinionDto> = this.page.util.response(
-        /credit\/jury\/vote\/opinion.*otype=2/,
-      );
-    //调用处理函数
-    await callHandle();
+  async getStatus(): Promise<number> {
+    /** 这个的返回值可能null(导航时),所以不用 */
+    await this.page.waitForNavigation();
+    /** 浏览器关闭触发太快肉眼都不可见改变页面 */
+    await this.page.util.wt(2, 4);
+    const url = this.page.url();
+    if (url.endsWith('/judgement/done')) {
+      this.isRun = -1;
+      return Promise.reject(-1);
+    }
+    if (url.endsWith('/judgement/goodjob')) {
+      this.isRun = 0;
+      return Promise.reject(0);
+    }
+    return Promise.resolve(1);
+  }
 
-    const returnDate = {},
-      mergeData = obj => _.merge(returnDate, obj);
-
-    /**
-     * 关于UnhandledPromiseRejectionWarning异常
-     * 1.
-     * 下面的几个获取数据需要在return判断之前,
-     * 不然会报异常
-     * 2.
-     * 之所以用单独的try包裹
-     * 是因为在一起的话,前一个报错后一个不执行,结果依然是会报异常
-     */
+  async getJuryCaseInfo() {
     try {
+      const callHandle = this.isHomePage
+        ? this.clickStartBtn.bind(this)
+        : this.goNext.bind(this);
+      const [juryCase, juryVoteRed, juryVoteBlue] = await Promise.all([
+        this.page.waitForResponse(res =>
+          res.url().includes('credit/jury/juryCase?'),
+        ),
+        this.page.waitForResponse(res =>
+          /credit\/jury\/vote\/opinion.*otype=1/.test(res.url()),
+        ),
+        this.page.waitForResponse(res =>
+          /credit\/jury\/vote\/opinion.*otype=2/.test(res.url()),
+        ),
+        callHandle(),
+        this.getStatus(),
+      ]);
+
+      this.isHomePage = false;
+
       const {
         data: { originContent = '', voteDelete = 0, voteRule = 0, id },
-      } = await juryCaseWait;
+      } = jsonpToJson(await juryCase.text());
       logger.info('获取到案件:', id);
-      mergeData({
+      const { data: voteOpinionRed } = jsonpToJson(await juryVoteRed.text()),
+        { data: voteOpinionBlue } = jsonpToJson(await juryVoteBlue.text());
+
+      await this.page.waitForTimeout(_.random(4000, 10000));
+
+      return {
         originContent,
         voteDelete,
         voteRule,
-      });
-    } catch (error) {}
-
-    try {
-      const { data: voteOpinionRed } = await juryVoteRedWait;
-      mergeData({ voteOpinionRed });
-    } catch (error) {}
-
-    try {
-      const { data: voteOpinionBlue } = await juryVoteBlueWait;
-      mergeData({ voteOpinionBlue });
-    } catch (error) {}
-
-    await this.page.waitForTimeout(_.random(4000, 10000));
-    if (await this.isDone()) return (this.isRun = -1);
-    if (await this.isGoodjob()) return (this.isRun = 0);
-    return returnDate;
+        voteOpinionBlue,
+        voteOpinionRed,
+      };
+    } catch (error) {
+      if (error === -1 || error === 0) {
+        return;
+      }
+      if (++this.voteGetErrorCount > MAX_ERROR_COUNT) {
+        logger.error('获取案件错误次数过多');
+        this.errorCount = MAX_ERROR_COUNT;
+        throw new Error(error);
+      }
+      logger.debug('获取案件失败', error);
+    }
   }
 
   async voteHandle(data: VoteDecisionOption) {
@@ -164,7 +189,7 @@ class Judgement {
   makeDecision({
     voteDelete = 0,
     voteRule = 0,
-    originContent,
+    originContent = '',
     voteOpinionBlue,
     voteOpinionRed,
   }: VoteDecisionOption): VoteType {
@@ -233,23 +258,17 @@ class Judgement {
     return myVote;
   }
 
-  async isDone() {
-    const url = await this.page.url();
-    return url.endsWith('/judgement/done');
-  }
-
-  async isGoodjob() {
-    const url = await this.page.url();
-    return url.endsWith('/judgement/goodjob');
-  }
-
   async goBackToHouse() {
-    await this.page.click('.judgement .home.home-app-width .case-tip button');
+    await this.page.util.clickWaitForNavigation(
+      '.judgement .home.home-app-width .case-tip button',
+    );
   }
 
   async goNext() {
     logger.debug('下一个案件');
-    await this.page.click('div.status-right > div > div > button');
+    return await this.page.util.clickWaitForNavigation(
+      'div.status-right > div > div > button',
+    );
   }
 
   async chooseRed() {

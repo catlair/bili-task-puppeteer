@@ -10,3 +10,9 @@
 ## 注意
 
 暂时上传 log,毕竟除了用户个人信息没其他东西
+
+为了不同环境的统一,chrome 的路径将由环境变量(`PUPPETEER_EXECUTABLE_PATH`)决定
+
+## API 参考
+
+- [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)

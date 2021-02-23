@@ -9,3 +9,12 @@ export function isMatchString(string: string, match: string | RegExp) {
   }
   return match.test(string);
 }
+
+export function jsonpToJson(jsonp: string): { [key: string]: any } {
+  const json = jsonp.match(/\w*\(({.*})\)/);
+  try {
+    return JSON.parse(json[1]);
+  } catch (error) {
+    return { data: null, code: -1 };
+  }
+}

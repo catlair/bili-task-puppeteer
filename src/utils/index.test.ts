@@ -4,7 +4,7 @@ import {
   distributedRandom,
   paginationSelect,
 } from './number';
-import { isMatchString } from './string';
+import { isMatchString, jsonpToJson } from './string';
 
 describe('cookie工具测试', () => {
   test('cookie字符串转cookie对象数组', () => {
@@ -86,5 +86,22 @@ describe('string测试', () => {
         /api.bilibili.com\/x\/credit\/jury\/vote\/option.*otype=1/,
       ),
     ).toBeFalsy();
+  });
+
+  test('jsonp转json', () => {
+    const jsonp1 =
+      'jQuery17206282081774188071_1613873812188({"code":0,"message":"0","ttl":1,"data":{"count":0,"opinion":null}})';
+    const jsonpError = 'ajhksbdsasdj';
+    expect(jsonpToJson(jsonp1)).toEqual({
+      code: 0,
+      message: '0',
+      ttl: 1,
+      data: {
+        count: 0,
+        opinion: null,
+      },
+    });
+
+    expect(jsonpToJson(jsonpError)).toEqual({ data: null, code: -1 });
   });
 });

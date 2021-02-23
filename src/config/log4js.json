@@ -17,17 +17,17 @@
     },
     "errors": {
       "type": "logLevelFilter",
-      "level": "ERROR",
+      "level": "WARN",
       "appender": "errorFile"
     }
   },
   "categories": {
     "default": {
       "appenders": ["errors", "runInfo", "everything"],
-      "level": "DEBUG"
+      "level": "TRACE"
     },
     "test": {
-      "appenders": ["test"],
+      "appenders": ["test", "runInfo"],
       "level": "DEBUG"
     }
   }

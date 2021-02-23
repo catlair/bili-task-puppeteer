@@ -1,13 +1,11 @@
-import { ElementHandle, Page } from 'puppeteer';
-import {
-  asyncArrayToArray,
-  paginationSelect,
-  distributedRandom,
-  jsonpToJson,
-} from '../utils';
+import { ElementHandle, Page } from 'puppeteer-core';
+import { paginationSelect, distributedRandom, mapAsync } from '../utils';
 import * as _ from 'lodash';
 import * as log4js from 'log4js';
 import { UserInfoNavDto } from '../dto/UserInfo.dto';
+import { paginationToJump } from '../common';
+import { DailyTask } from '../config/globalVar';
+import shareVideo from './shareVideo';
 
 const logger = log4js.getLogger('upTask');
 
@@ -17,7 +15,10 @@ enum Contribute {
   '专栏',
 }
 
-class UPTask {
+const ONE_COIN_EXP = 10;
+const MAX_ADD_COIN_EXP = 50;
+
+export class UPTask {
   page: Page;
   uid: number = 0;
   $$: ElementHandle[] = [];
@@ -28,67 +29,95 @@ class UPTask {
   contributeNum: number = 0;
   /** 投币状态,true表示不能了 */
   coinStatus: boolean = false;
-  constructor(page: Page, uid: string | number) {
+  constructor(page: Page, uid?: string | number) {
     this.page = page;
     this.uid = Number(uid);
   }
 
   async init() {
     try {
+      await this.page.util.wt(2, 4);
       await this.goToUpByUid();
+      const username = await this.getUserName();
+      logger.info(`访问UP主 【${username}】`);
     } catch (error) {
+      await this.closeUpPage();
       logger.error('前往up页面失败');
       return;
     }
     /** 投稿 */
-    try {
-      await this.page.waitForTimeout(_.random(2000, 5000));
-      const nums = await this.getContributeItem();
-      await this.page.waitForTimeout(_.random(2000, 5000));
-      /** 0 - (total - 1) */
-      const { value, area } = distributedRandom(nums);
-      this.contributeType = area;
-      this.contributeNum = value;
-      logger.trace('选择类型:', Contribute[this.contributeType]);
-    } catch (error) {
-      logger.error('获取up随机视频失败', error);
-    }
+    await this.page.waitForTimeout(_.random(2000, 5000));
+    const nums = await this.getContributeItem();
+    await this.changeContributeType(nums);
+    await this.page.waitForTimeout(_.random(1000, 3000));
 
-    try {
-      await this.$$[this.contributeType || 0].click({ delay: 200 });
-      await this.page.waitForTimeout(_.random(2000, 5000));
-    } catch (error) {
-      logger.error('选择类型失败', error.message);
-    }
-
+    //不直接return是因为只能要做统一的关闭页面
+    let isContinueCoin = true;
     try {
       switch (this.contributeType) {
         case 0:
           //视频
-          return await this.videoHandle(this.contributeNum);
+          await this.commonHandle();
+          isContinueCoin = await this.videoHandle();
+          break;
         case 1:
           //音频
-          return await this.audioHandle(this.contributeNum);
+          await this.commonHandle();
+          isContinueCoin = await this.audioHandle();
+          break;
         case 2:
           //专栏
-          return await this.articleHandle(this.contributeNum);
-
+          await this.commonHandle(
+            12 /** 分页12 */,
+            '.article-title a[href^="//www.bilibili.com/read/cv"]',
+          );
+          isContinueCoin = await this.articleHandle();
+          break;
         default:
           break;
       }
     } catch (error) {
       logger.warn('投币出现异常', error.message);
     }
+
+    await this.closeUpPage();
+    return isContinueCoin;
+  }
+
+  async changeContributeType(nums: number[]) {
+    /** 0 - (total - 1) */
+    const { value, area } = distributedRandom(nums);
+    this.contributeType = area;
+    this.contributeNum = value;
+    logger.trace('选择类型:', Contribute[this.contributeType]);
+
+    //默认就在视频上
+    if (this.contributeType !== 0) {
+      await this.$$[this.contributeType || 0].click({ delay: 200 });
+    }
+    await this.page.waitForTimeout(_.random(2000, 5000));
+  }
+
+  async closeUpPage() {
+    if (!this.page.isClosed()) {
+      await this.page.util.wt(2, 4);
+      this.page.close();
+      logger.debug('关闭投币页面');
+    }
   }
 
   async goToUpByUid() {
-    const res = await Promise.all([
+    if (!this.uid) {
+      await this.page.evaluate(() =>
+        $('.n-tab-links [href*="video"]')[0].click(),
+      );
+      return;
+    }
+    await Promise.all([
       this.page.waitForResponse('https://api.bilibili.com/x/web-interface/nav'),
       this.page.goto(`https://space.bilibili.com/${this.uid}/video`),
     ]);
-    this.userNav = (await res[0].json()).data;
-    logger.debug('剩余硬币数', this.userNav.money);
-    return res;
+    return;
   }
 
   /**
@@ -105,17 +134,42 @@ class UPTask {
     ]);
   }
 
-  async getContributeId(): Promise<string> {
+  async getContributeId(
+    $item: ElementHandle,
+  ): Promise<{
+    title: string;
+    id: string;
+  }> {
     try {
-      const url = await this.page.url();
-      return url.match(/\/([0-9A-Za-z]+)$/)?.[1] || '未知';
+      switch (this.contributeType) {
+        case 0:
+          return $item.evaluate($li => ({
+            id: $li.getAttribute('data-aid'),
+            title: $li.querySelector('.title').title,
+          }));
+        case 1:
+          return await $item.evaluate($li => {
+            const $title = $li.querySelector('.title');
+            return {
+              title: $title.title,
+              id: $title.href.match(/\/([0-9A-Za-z]+)(?:$|\?)/)?.[1] || '未知',
+            };
+          });
+        case 2:
+          return $item.evaluate($li => ({
+            id: $li.href.match(/\/([0-9A-Za-z]+)(?:$|\?)/)?.[1] || '未知',
+            title: $li.title,
+          }));
+        default:
+          return { title: '未知', id: '未知' };
+      }
     } catch (error) {
       logger.debug('获取稿件id异常', error.message);
-      return '未知';
+      return { title: '未知', id: '未知' };
     }
   }
 
-  /** 获取投稿页面音视频和专栏的数量以及元素 */
+  /** 获取投稿页面音视频和专栏的数量 */
   async getContributeItem(): Promise<number[]> {
     const $$contributions: ElementHandle[] = await this.page.util.$$wait(
       '.contribution-list > .contribution-item',
@@ -124,34 +178,48 @@ class UPTask {
     $$contributions.length = 3;
     this.$$ = $$contributions;
     //获取页面中的数字
-    const numsPro = $$contributions.map(
-      async $ => await $.$eval('.num', el => Number(el.textContent)),
+    return await mapAsync(
+      $$contributions,
+      async $ => await $.$eval('.num', el => +el.textContent),
     );
-    return await asyncArrayToArray(numsPro);
+  }
+
+  async getUserName() {
+    try {
+      return await this.page.$eval('#h-name', $username => $username.innerHTML);
+    } catch (error) {
+      logger.warn('获取up用户名失败', error.message);
+      return '未知';
+    }
   }
 
   /**
    *
-   * @param page 网页对象
-   * @param countNum 第几个内容
    * @param pageSize 分页大小
    * @param itemSelector 选择每一项使用的选择器
    */
   async commonHandle(
-    countNum: number,
     pageSize: number = 30,
     itemSelector: string = '.section .small-item',
   ) {
     await this.page.waitForTimeout(_.random(4000, 8000));
     //投稿页面一页将会有30或者12个(专栏),然后分页
-    const { page: pageNum, num } = paginationSelect(countNum, pageSize);
+    const { pageNum, num } = paginationSelect(this.contributeNum, pageSize);
     //跳转
-    await this.paginationToJump(pageNum);
+    await paginationToJump(this.page, pageNum, logger);
     await this.page.waitForTimeout(2000);
-    logger.trace(`选择第${num + 1}个${Contribute[this.contributeType]}...`);
+    //获取所有元素并打印信息
     const $$item = await this.page.util.$$wait(itemSelector);
+    const { title, id } = await this.getContributeId($$item[num]);
+    logger.trace(`选择第${num + 1}个${Contribute[this.contributeType]}...`);
+    logger.info(`前往${Contribute[this.contributeType]}:`, id, title);
+    //只在本页操作
     await this.page.util.removeTarget();
-    const runArray: any = [this.page.waitForNavigation(), $$item[num].click()];
+    const runArray: any = [
+      this.getCoinNum(),
+      this.page.waitForNavigation(),
+      $$item[num].click(),
+    ];
     switch (this.contributeType) {
       case 1:
         runArray.splice(0, 0, this.getAudioCoinStatus());
@@ -163,9 +231,16 @@ class UPTask {
         break;
     }
     await Promise.all(runArray);
-    const id = await this.getContributeId();
-    logger.info(`前往${Contribute[this.contributeType]}:`, id);
     await this.page.waitForTimeout(2000);
+  }
+
+  async getCoinNum() {
+    const res = await this.page.waitForResponse(
+      'https://api.bilibili.com/x/web-interface/nav',
+    );
+    this.userNav = (await res.json()).data;
+    logger.debug('剩余硬币数', this.userNav.money);
+    return res;
   }
 
   async playVideo() {
@@ -173,17 +248,25 @@ class UPTask {
       logger.debug('播放视频...');
       const $video = await this.page.$('video');
       await $video.click();
-      await this.page.waitForTimeout(_.random(2000, 10000));
-      // await $video.click();
     } catch (e) {
       logger.error('环境不支持点击视频', e);
     }
   }
 
-  async videoHandle(countNum: number): Promise<boolean> {
-    await this.commonHandle(countNum);
+  async videoHandle(): Promise<boolean> {
     await this.page.waitForTimeout(3000);
     await this.playVideo();
+    const videoUrl = this.page.url();
+    if (!videoUrl.includes('//www.bilibili.com/video/')) {
+      logger.info('特殊视频暂不支持分享投币...');
+      logger.debug('视频链接', videoUrl);
+      return false;
+    }
+    await this.page.util.wt(5, 10);
+    if (!DailyTask.share) {
+      await shareVideo(this.page, logger);
+      await this.page.util.wt(2, 4);
+    }
 
     if (!(await this.isUp())) {
       logger.debug('视频up主非指定up主,放弃投币');
@@ -200,31 +283,11 @@ class UPTask {
       '.coin-bottom .bi-btn',
       '/coin/today/exp',
     );
-
     const { data } = await res.json();
-    if (data >= 50) {
-      logger.info('今日已投币数量', data / 10, '今日已经够了');
-      return true;
-    }
-    await this.page.waitForTimeout(_.random(2000, 4000));
-    if (data === 40) {
-      logger.debug('还需要投一枚硬币');
-      await this.page.evaluate(() => {
-        const box = $(':contains("1硬币")');
-        box[box.length - 2].click();
-      });
-      await this.page.util.wt(1, 3);
-      return await this.addCoin($coinSure);
-    }
-    return (await this.addCoin($coinSure))
-      ? data === 30
-        ? true
-        : false
-      : false;
+    return await this.addCoinSure(data, $coinSure);
   }
 
-  async audioHandle(countNum: number): Promise<boolean> {
-    await this.commonHandle(countNum);
+  async audioHandle(): Promise<boolean> {
     if (this.coinStatus) {
       return false;
     }
@@ -235,30 +298,10 @@ class UPTask {
       '/web/coin/exp',
     );
     const { data } = await res.json();
-    await this.page.waitForTimeout(_.random(2000, 4000));
-    if (data < 50) {
-      await this.addCoin($coinSure);
-    } else {
-      logger.info('投币数量', data / 10, '今日已经够了');
-      return true;
-    }
-    if (data === 40) {
-      logger.debug('还需要投一枚硬币');
-      await this.page.evaluate(() => {
-        const box = $(':contains("1硬币")');
-        box[box.length - 2].click();
-      });
-      return await this.addCoin($coinSure);
-    }
-    return false;
+    return await this.addCoinSure(data, $coinSure);
   }
 
-  async articleHandle(countNum: number): Promise<boolean> {
-    await this.commonHandle(
-      countNum,
-      12 /** 分页12 */,
-      '.article-title a[href^="//www.bilibili.com/read/cv"]',
-    );
+  async articleHandle(): Promise<boolean> {
     if (this.coinStatus) {
       return false;
     }
@@ -272,14 +315,26 @@ class UPTask {
     const exp = +(await $coinTipsExp
       .getProperty('innerText')
       .then(jH => jH.jsonValue()));
+    return await this.addCoinSure(exp, $coinSure);
+  }
+
+  async addCoinSure(exp: number, $coinSure: ElementHandle): Promise<boolean> {
     await this.page.waitForTimeout(_.random(2000, 4000));
-    if (exp < 50) {
-      await this.addCoin($coinSure);
-    } else {
-      logger.info('投币数量', exp / 10, '今日已经够了');
+    if (exp === 40 && this.contributeType !== Contribute['专栏']) {
+      logger.debug('还需要投一枚硬币');
+      await this.page.evaluate(() => {
+        const box = $(':contains("1硬币")');
+        box[box.length - 2].click();
+      });
+      await this.page.util.wt(1, 3);
+      return (await this.addCoin($coinSure)) === 1;
+    }
+    if (exp >= MAX_ADD_COIN_EXP) {
+      logger.info('投币数量', exp / ONE_COIN_EXP, '今日已经够了');
       return true;
     }
-    return exp === 40 ? true : false;
+    const coinNum = await this.addCoin($coinSure);
+    return MAX_ADD_COIN_EXP <= coinNum * ONE_COIN_EXP + exp;
   }
 
   /** 判断目标用户是否是该视频up(不一定准) */
@@ -298,26 +353,12 @@ class UPTask {
     }
   }
 
-  async paginationToJump(pageNum: number) {
-    //跳转到页面,首页就不跳转了
-    pageNum++; //从0开始数的
-    logger.trace('跳转到第', pageNum, '页');
-    if (pageNum === 1) return;
-
-    await this.page.util.scrollDown();
-    const $input = await this.page.util.$wait(
-      '.be-pager-options-elevator .space_input',
-    );
-    await $input.focus();
-    await this.page.keyboard.type(pageNum.toString(), { delay: 1000 });
-    await this.page.keyboard.press('Enter', { delay: 500 });
-  }
-
   /**
    * 投币
    * @param $coinSure 确认投币按钮
+   * @returns 返回投币数0,1,2
    */
-  async addCoin($coinSure: ElementHandle): Promise<boolean> {
+  async addCoin($coinSure: ElementHandle): Promise<number> {
     const [coinRes] = await Promise.all([
       this.page.waitForResponse(r => r.url().includes('/coin/add')),
       $coinSure.click(),
@@ -329,10 +370,10 @@ class UPTask {
     const { code, message } = await coinRes.json();
     if (code === 0) {
       logger.info('成功投币', multiply, '颗');
-      return true;
+      return Number(multiply);
     }
     logger.warn('投币失败', code, message);
-    return false;
+    return 0;
   }
 
   /**
@@ -396,11 +437,11 @@ class UPTask {
 
 /**
  * 运行返回true表示今日不需要投币了
- * @param page
+ * @param page up
  * @param uid
  *
  * 使用时需要注意设置延时,避免浏览器关闭太快
  */
-export default async function (page: Page, uid: string | number) {
+export default async function (page: Page, uid?: string | number) {
   return await new UPTask(page, uid).init();
 }

@@ -1,10 +1,8 @@
 import { getCookies, getUserId } from './cookie';
-import {
-  asyncArrayToArray,
-  distributedRandom,
-  paginationSelect,
-} from './number';
-import { isMatchString, jsonpToJson } from './string';
+import { distributedRandom, paginationSelect } from './number';
+import { containProhibit, isMatchString, jsonpToJson } from './string';
+import { filterAsync, mapAsync } from './array';
+import prohibitWords from '../config/prohibitWords';
 
 describe('cookie工具测试', () => {
   test('cookie字符串转cookie对象数组', () => {
@@ -29,11 +27,6 @@ describe('cookie工具测试', () => {
 });
 
 describe('数处理', () => {
-  test('Promise<number>[] 转换成 number[]', async () => {
-    const asyncArray = [1, 2, 3].map(async el => el);
-    expect(await asyncArrayToArray(asyncArray)).toEqual([1, 2, 3]);
-  });
-
   test('随机分布数字域的随机数', () => {
     expect(distributedRandom([0, 0, 1])).toEqual({
       value: 0,
@@ -52,12 +45,12 @@ describe('数处理', () => {
   test('分页选择', () => {
     //从0开始数,50个一页,所以第一页0-49
     expect(paginationSelect(50, 50)).toEqual({
-      page: 1,
+      pageNum: 1,
       num: 0,
     });
     //默认参数
     expect(paginationSelect(10)).toEqual({
-      page: 1,
+      pageNum: 1,
       num: 0,
     });
   });
@@ -103,5 +96,31 @@ describe('string测试', () => {
     });
 
     expect(jsonpToJson(jsonpError)).toEqual({ data: null, code: -1 });
+  });
+
+  test('违禁词检测', () => {
+    expect(containProhibit(prohibitWords, '你爸我可厉害了')).toBeTruthy();
+    expect(containProhibit(prohibitWords, '你爸爸没给你妈说吗?')).toBeFalsy();
+    expect(
+      containProhibit(prohibitWords, '你们荷兰人真是伤透了我的心！'),
+    ).toBeTruthy();
+  });
+});
+
+describe('数组方法测试', () => {
+  test('filterAsync', async () => {
+    const result = await filterAsync(
+      [Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)],
+      async el => (await el) > 1,
+    );
+    expect(result).toEqual([Promise.resolve(2), Promise.resolve(3)]);
+  });
+
+  test('mapAsync', async () => {
+    const result = await mapAsync(
+      [Promise.resolve(1), Promise.resolve(2), Promise.resolve(3)],
+      async el => (await el) * 2,
+    );
+    expect(result).toEqual([2, 4, 6]);
   });
 });

@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-extra';
-import { Browser } from 'puppeteer';
+import { Browser } from 'puppeteer-core';
 import * as os from 'os';
 
 const blockResourcesPlugin = require('puppeteer-extra-plugin-block-resources')({
@@ -9,20 +9,12 @@ const blockResourcesPlugin = require('puppeteer-extra-plugin-block-resources')({
 puppeteer.use(require('puppeteer-extra-plugin-stealth')());
 puppeteer.use(require('puppeteer-extra-plugin-anonymize-ua')());
 puppeteer.use(require('./plugins/eval-plugin')());
-// puppeteer.use(blockResourcesPlugin);
-
-const launchOptions =
-  os.type() === 'Windows_NT'
-    ? {
-        headless: false,
-        executablePath:
-          'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      }
-    : {};
+puppeteer.use(blockResourcesPlugin);
 
 export default async function (): Promise<Browser> {
   return puppeteer.launch({
-    ...launchOptions,
+    headless: os.type() === 'Windows_NT' ? false : true,
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
     defaultViewport: {
       width: 1500,
       height: 700,

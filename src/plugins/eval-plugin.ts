@@ -5,7 +5,7 @@ import {
   Page,
   WaitForOptions,
   WaitForSelectorOptions,
-} from 'puppeteer';
+} from 'puppeteer-core';
 import * as _ from 'lodash';
 import * as path from 'path';
 

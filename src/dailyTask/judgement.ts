@@ -1,11 +1,10 @@
 import { JuryVoteOpinionDto } from '../dto/Jury.dto';
-import { Page } from 'puppeteer';
+import { Page } from 'puppeteer-core';
 import { JuryVoteOption } from '../interface/Jury';
 import * as _ from 'lodash';
 import { getLogger } from 'log4js';
 import prohibitWords from '../config/prohibitWords';
-import { HTTPResponse } from 'puppeteer';
-import { jsonpToJson } from '../utils';
+import { containProhibit, jsonpToJson } from '../utils';
 
 const logger = getLogger('jury');
 
@@ -193,15 +192,6 @@ class Judgement {
     voteOpinionBlue,
     voteOpinionRed,
   }: VoteDecisionOption): VoteType {
-    function containProhibit(words: Array<any>, str: string): boolean {
-      if (!str) {
-        return false;
-      }
-      return words.some(el => {
-        return str.indexOf(el) !== -1;
-      });
-    }
-
     //瞎鸡*计算怎么投票
     let myVote: VoteType = 4;
 
@@ -214,18 +204,26 @@ class Judgement {
       红方: 评论数${opinionRedCount} / 总人数${voteDelete}
     `);
 
+    //vote判断不合理,有的人喊着封禁实则没有
     const banOfRed =
-      voteOpinionRed?.opinion?.filter(el => el.vote === Vote['封禁']) || [];
+      voteOpinionRed?.opinion?.filter(el => {
+        if (el.vote === Vote['封禁']) {
+          return true;
+        }
+        const text = ['封禁', '小黑屋', '封了', '建议封', '小黑屋'];
+        if (text.some(v => el.content.includes(v))) {
+          return true;
+        }
+        return false;
+      }) || [];
     const ban = containProhibit(prohibitWords, originContent);
 
-    //大家都说你
-    if (ban && originContent.length < 6) {
-      //就这几个字你好含有地域黑嫌疑词
+    if (ban) {
       logger.info('应该是地域黑吧?');
       myVote = Vote['封禁'];
     } else if (
-      opinionRedCount > 3 &&
-      banOfRed.length / opinionRedCount >= 0.8
+      (opinionRedCount > 3 && banOfRed.length / opinionRedCount >= 0.8) ||
+      banOfRed.length > 5
     ) {
       //>3 还是严谨点
       logger.info('多人发布观点表示封禁');

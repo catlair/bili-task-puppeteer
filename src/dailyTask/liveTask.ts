@@ -1,68 +1,28 @@
 import { FansMedalDto } from '../dto/Live.dto';
 import * as _ from 'lodash';
 import * as log4js from 'log4js';
-import { ElementHandle, HTTPResponse, Page } from 'puppeteer';
+import { ElementHandle, HTTPResponse, Page } from 'puppeteer-core';
 
 type FansMedalList = FansMedalDto['data']['fansMedalList'];
 
 const logger = log4js.getLogger('live');
-const kaomoji = [
-  '(⌒▽⌒)',
-  '（￣▽￣）',
-  '(=・ω・=)',
-  '(｀・ω・´)',
-  '(〜￣△￣)〜',
-  '(･∀･)',
-  '(°∀°)ﾉ',
-  '(￣3￣)',
-  '╮(￣▽￣)╭',
-  '_(:3」∠)_',
-  '( ´_ゝ｀)',
-  '←_←',
-  '→_→',
-  '(<_<)',
-  '(>_>)',
-  '(;¬_¬)',
-  '(ﾟДﾟ≡ﾟдﾟ)!?',
-  'Σ(ﾟдﾟ;)',
-  'Σ( ￣□￣||)',
-  '(´；ω；`)',
-  '（/TДT)/',
-  '(^・ω・^ )',
-  '(｡･ω･｡)',
-  '(●￣(ｴ)￣●)',
-  'ε=ε=(ノ≧∇≦)ノ',
-  '(´･_･`)',
-  '(-_-#)',
-  '（￣へ￣）',
-  '(￣ε(#￣) Σ',
-  'ヽ(`Д´)ﾉ',
-  '（#-_-)┯━┯',
-  '(╯°口°)╯(┴—┴',
-  '←◡←',
-  '( ♥д♥)',
-  'Σ>―(〃°ω°〃)♡→',
-  '⁄(⁄ ⁄•⁄ω⁄•⁄ ⁄)⁄',
-  '(╬ﾟдﾟ)▄︻┻┳═一',
-  '･*･:≡(　ε:)',
-  '(汗)',
-  '(苦笑)',
-  '1',
-  '2',
-  '3',
-  '4',
-  '5',
-  '你们好',
-];
+const kaomoji = require('../config/kaomoji.json');
 
-class live {
+const excludesRoom = [20165629];
+const includesRoom = [];
+
+class Live {
   page: Page;
   livePage: Page;
+  //完成数
   count: number = 0;
   total: number = 0;
+  //操作的页数
+  pageNum: number = 0;
   totalpages: number = 0;
   /** 操作的房间下标 */
   index: number = -1;
+  /** 页面中无法获取id,所以通过接口获取 */
   fansMedalList: FansMedalList = [];
   $$room: Array<ElementHandle> = [];
   constructor(page: Page) {
@@ -106,13 +66,21 @@ class live {
 
   async goNextPage() {
     // 使用click会显示元素不可见或不存在,改成js能行
+    // .... 发生卡死的情况暂未处理
     const click = () =>
-      this.page.util.evalClick(
-        'div.operation-page.page-medal > div.link-panigation-ctnr.t-right > ul > li:last-child',
-      );
+      Promise.race([
+        this.page.util.evalClick(
+          'div.operation-page.page-medal > div.link-panigation-ctnr.t-right > ul > li:last-child',
+        ),
+        async () => {
+          await this.page.waitForTimeout(12000);
+          return Promise.reject('timeout 12000');
+        },
+      ]);
     try {
       await click();
     } catch (error) {
+      await this.page.reload();
       await click();
     }
   }
@@ -153,7 +121,6 @@ class live {
   }
 
   async getNextPageMedal() {
-    await this.page.util.scrollDown();
     const [res] = await Promise.all([
         this.getMedalResponse(),
         this.goNextPage(),
@@ -176,34 +143,19 @@ class live {
     }
   }
 
-  /** 排除房间 */
-  excludeRoom() {}
-
-  /** 支持房间 */
-  includeRoom() {}
-
   /** 过滤直播间 */
   filterLiveRoom() {
     this.fansMedalList = this.fansMedalList
       .filter(medal => {
+        const hasRoom = Boolean(medal.roomid);
+        if (medal.todayFeed >= 100) return false;
+        /** 包括房间,该策略优先于排除 */
+        if (includesRoom.length > 0) {
+          return includesRoom.includes(medal.target_id) && hasRoom;
+        }
         /** 排除的用户数组,暂时这样直接写 */
-        if ([20165629].includes(medal.target_id)) return false;
-        // if (
-        //   [
-        //     367877,
-        //     883968,
-        //     31604158,
-        //     35359510,
-        //     453972,
-        //     20165629,
-        //     36081646,
-        //     55775966,
-        //     298141644,
-        //     8681279,
-        //   ].includes(medal.target_id)
-        // )
-        // return false;
-        return Boolean(medal.roomid);
+        if (excludesRoom.includes(medal.target_id)) return false;
+        return hasRoom;
       })
       .sort(() => Math.random() - 0.5)
       .reverse()
@@ -216,16 +168,23 @@ class live {
       this.index
     ];
     logger.info(`选择${target_name}--【${medalName}】(Lv.${level})`);
+    logger.trace('点击');
+    await Promise.race([
+      this.$$room[this.index]?.click(),
+      this.page.waitForTimeout(12000),
+    ]);
+    logger.trace('点击后');
     try {
-      await this.$$room[this.index].click();
       const liveTarget = await this.page
         .browser()
-        .waitForTarget(t =>
-          /^https?:\/\/live\.bilibili\.com\/\d+$/.test(t.url()),
+        .waitForTarget(
+          t => /^https?:\/\/live\.bilibili\.com\/\d+($|\?)/.test(t.url()),
+          { timeout: 12000 },
         );
+      logger.trace('找到目标页面');
       this.livePage = await liveTarget.page();
     } catch (error) {
-      logger.debug('点击btn失败', error);
+      logger.debug('获取页面失败', error.message);
       logger.debug('尝试直接前往直播间', target_name, roomid);
       this.livePage = await this.page.browser().newPage();
       await this.livePage.goto('https://live.bilibili.com/' + roomid);
@@ -234,15 +193,23 @@ class live {
   }
 
   async sendMessage() {
-    const $text = await this.livePage.$(
-      'div.chat-input-ctnr.p-relative > div:nth-child(2) > textarea',
-    );
+    logger.trace('开始寻找输入框');
+    let $text: ElementHandle;
+    const selector =
+      'div.chat-input-ctnr.p-relative > div:nth-child(2) > textarea';
 
-    if (!$text) {
-      logger.info('直播间可能不允许评论');
+    const result = await Promise.race([
+      this.livePage.util.$wait(selector),
+      this.livePage.waitForTimeout(12000),
+    ]);
+    if (!result) {
+      await this.page.screenshot({
+        path: `testimg/live-弹幕${Date.now()}.png`,
+      });
+      logger.info('直播间可能不允许评论/或者活动直播间(暂不支持)');
       return;
     }
-
+    $text = result;
     const message = kaomoji[_.random(kaomoji.length - 1)];
     await $text.type(message, {
       delay: _.random(100, 200),
@@ -253,14 +220,18 @@ class live {
 
   async closeLiveRoom() {
     try {
-      this.livePage.close();
+      if (!this.livePage.isClosed()) {
+        this.livePage.close();
+      }
     } catch (error) {
-      this.livePage.close();
+      if (!this.livePage.isClosed()) {
+        this.livePage.close();
+      }
     }
     logger.debug('关闭直播页面');
   }
 }
 
 export default async function (page: Page) {
-  return await new live(page).init();
+  return await new Live(page).init();
 }

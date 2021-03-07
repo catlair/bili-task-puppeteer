@@ -27,7 +27,7 @@ export class UPTask {
   userNav: UserInfoNavDto['data'];
   /** 第几个 */
   contributeNum: number = 0;
-  /** 投币状态,true表示不能了 */
+  /** 本稿件投币状态,true表示已经投完了 */
   coinStatus: boolean = false;
   constructor(page: Page, uid?: string | number) {
     this.page = page;
@@ -52,26 +52,25 @@ export class UPTask {
     await this.page.waitForTimeout(_.random(1000, 3000));
 
     //不直接return是因为只能要做统一的关闭页面
-    let isContinueCoin = true;
+    let isStopCoin = true;
     try {
       switch (this.contributeType) {
         case 0:
           //视频
-          await this.commonHandle();
-          isContinueCoin = await this.videoHandle();
+          (await this.commonHandle()) &&
+            (isStopCoin = await this.videoHandle());
           break;
         case 1:
           //音频
-          await this.commonHandle();
-          isContinueCoin = await this.audioHandle();
+          (await this.commonHandle()) &&
+            (isStopCoin = await this.audioHandle());
           break;
         case 2:
           //专栏
-          await this.commonHandle(
+          (await this.commonHandle(
             12 /** 分页12 */,
             '.article-title a[href^="//www.bilibili.com/read/cv"]',
-          );
-          isContinueCoin = await this.articleHandle();
+          )) && (isStopCoin = await this.articleHandle());
           break;
         default:
           break;
@@ -81,7 +80,7 @@ export class UPTask {
     }
 
     await this.closeUpPage();
-    return isContinueCoin;
+    return isStopCoin;
   }
 
   async changeContributeType(nums: number[]) {
@@ -202,6 +201,9 @@ export class UPTask {
     pageSize: number = 30,
     itemSelector: string = '.section .small-item',
   ) {
+    if (this.userNav?.money ?? this.userNav?.money < 1) {
+      return false;
+    }
     await this.page.waitForTimeout(_.random(4000, 8000));
     //投稿页面一页将会有30或者12个(专栏),然后分页
     const { pageNum, num } = paginationSelect(this.contributeNum, pageSize);
@@ -232,6 +234,7 @@ export class UPTask {
     }
     await Promise.all(runArray);
     await this.page.waitForTimeout(2000);
+    return true;
   }
 
   async getCoinNum() {
@@ -239,7 +242,7 @@ export class UPTask {
       'https://api.bilibili.com/x/web-interface/nav',
     );
     this.userNav = (await res.json()).data;
-    logger.debug('剩余硬币数', this.userNav.money);
+    logger.debug('剩余硬币数', this.userNav?.money);
     return res;
   }
 

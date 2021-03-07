@@ -148,7 +148,7 @@ class Live {
     this.fansMedalList = this.fansMedalList
       .filter(medal => {
         const hasRoom = Boolean(medal.roomid);
-        if (medal.todayFeed >= 100) return false;
+        // if (medal.todayFeed >= 100) return false;
         /** 包括房间,该策略优先于排除 */
         if (includesRoom.length > 0) {
           return includesRoom.includes(medal.target_id) && hasRoom;
@@ -198,14 +198,18 @@ class Live {
     const selector =
       'div.chat-input-ctnr.p-relative > div:nth-child(2) > textarea';
 
+    (async () => {
+      await this.livePage.waitForTimeout(4000);
+      this.livePage.screenshot({
+        path: `testimg/live-弹幕${Date.now()}.png`,
+      });
+    })();
+
     const result = await Promise.race([
       this.livePage.util.$wait(selector),
       this.livePage.waitForTimeout(12000),
     ]);
     if (!result) {
-      await this.page.screenshot({
-        path: `testimg/live-弹幕${Date.now()}.png`,
-      });
       logger.info('直播间可能不允许评论/或者活动直播间(暂不支持)');
       return;
     }

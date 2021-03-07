@@ -12,6 +12,7 @@ puppeteer.use(require('./plugins/eval-plugin')());
 puppeteer.use(blockResourcesPlugin);
 
 export default async function (): Promise<Browser> {
+  //@ts-ignore
   return puppeteer.launch({
     headless: os.type() === 'Windows_NT' ? false : true,
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,

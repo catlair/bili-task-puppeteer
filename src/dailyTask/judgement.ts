@@ -229,17 +229,22 @@ class Judgement {
       logger.info('多人发布观点表示封禁');
       myVote = Vote['封禁'];
     } else if (voteDelete > 200 && voteRule < 20) {
+      logger.trace('voteDelete > 200 && voteRule < 20');
       myVote = Vote['删除'];
     } else if (voteRule > voteDelete * 2 && voteRule > 200) {
+      logger.trace('voteRule > voteDelete * 2 && voteRule > 200');
       //保留的人多
       myVote = Vote['保留'];
     } else if (voteDelete > voteRule * 2 && voteRule > 100) {
+      logger.trace('voteDelete > voteRule * 2 && voteRule > 100');
       //删除的人多
       myVote = Vote['删除'];
     } else if (opinionRedCount >= 5 && opinionBlueCount <= 1) {
+      logger.trace('opinionRedCount >= 5 && opinionBlueCount <= 1');
       //删除的人还是挺多的
       myVote = Vote['删除'];
     } else if (opinionBlueCount >= 7 && opinionRedCount === 0) {
+      logger.trace('opinionBlueCount >= 7 && opinionRedCount === 0');
       //保留的人确实多
       if (voteRule > voteDelete) {
         myVote = Vote['保留'];
@@ -247,8 +252,14 @@ class Judgement {
         myVote = Vote['删除'];
       }
     } else if (voteDelete > voteRule && opinionRedCount > opinionBlueCount) {
+      logger.trace(
+        'voteDelete > voteRule && opinionRedCount > opinionBlueCount',
+      );
       myVote = Vote['删除'];
     } else if (voteDelete < voteRule && opinionRedCount < opinionBlueCount) {
+      logger.trace(
+        'voteDelete < voteRule && opinionRedCount < opinionBlueCount',
+      );
       myVote = Vote['保留'];
     }
 

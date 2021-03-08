@@ -7,7 +7,7 @@
 - 无配置文件(除 cookie 以`TEST_COOKIE`保存在 env 或者.env 中)
 - 直播间屏蔽部分直接在 liveTask 中的常量改
 - 关注列表包含/投币直接修改 upTask 中的常量
-- dockerfile 文件只是方便测试制作的(虽然预计运行方式也是 docker),运行方式`docker run -it --rm -v $(pwd)/dist:/usr/src/app/dist --cap-add=SYS_ADMIN 镜像名`
+- dockerfile 文件只是方便测试制作的(虽然预计运行方式也是 docker),运行方式`docker run -it --rm -v $(pwd)/dist:/usr/src/app/dist --cap-add=SYS_ADMIN 镜像名 node ./dist/index.js`
 
 ### 支持的功能
 

@@ -11,7 +11,7 @@ import * as _ from 'lodash';
 
 const logger = log4js.getLogger('upTask');
 
-const includesFollow = ['勋章'];
+const includesFollow = ['特别关注'];
 const excludesFollow = [];
 
 export default async function (page: Page): Promise<Page> {

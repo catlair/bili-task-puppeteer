@@ -1,5 +1,5 @@
 import { ElementHandle, Page } from 'puppeteer-core';
-import { paginationSelect, distributedRandom, mapAsync } from '../utils';
+import { distributedRandom, mapAsync, paginationSelect } from '../utils';
 import * as _ from 'lodash';
 import * as log4js from 'log4js';
 import { UserInfoNavDto } from '../dto/UserInfo.dto';
@@ -29,6 +29,7 @@ export class UPTask {
   contributeNum: number = 0;
   /** 本稿件投币状态,true表示已经投完了 */
   coinStatus: boolean = false;
+
   constructor(page: Page, uid?: string | number) {
     this.page = page;
     this.uid = Number(uid);
@@ -53,17 +54,18 @@ export class UPTask {
 
     //不直接return是因为只能要做统一的关闭页面
     let isStopCoin = true;
+    let errorCount = 0;
     try {
       switch (this.contributeType) {
         case 0:
           //视频
           (await this.commonHandle()) &&
-            (isStopCoin = await this.videoHandle());
+          (isStopCoin = await this.videoHandle());
           break;
         case 1:
           //音频
           (await this.commonHandle()) &&
-            (isStopCoin = await this.audioHandle());
+          (isStopCoin = await this.audioHandle());
           break;
         case 2:
           //专栏
@@ -77,6 +79,8 @@ export class UPTask {
       }
     } catch (error) {
       logger.warn('投币出现异常', error.message);
+      // 当出现异常,不管投币是否成功,都再次尝试投币
+      errorCount++ < 4 && (isStopCoin = false);
     }
 
     await this.closeUpPage();
@@ -100,7 +104,7 @@ export class UPTask {
   async closeUpPage() {
     if (!this.page.isClosed()) {
       await this.page.util.wt(2, 4);
-      this.page.close();
+      await this.page.close();
       logger.debug('关闭投币页面');
     }
   }
@@ -445,6 +449,6 @@ export class UPTask {
  *
  * 使用时需要注意设置延时,避免浏览器关闭太快
  */
-export default async function (page: Page, uid?: string | number) {
+export default async function(page: Page, uid?: string | number) {
   return await new UPTask(page, uid).init();
 }

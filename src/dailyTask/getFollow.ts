@@ -1,9 +1,4 @@
-import {
-  distributedRandom,
-  filterAsync,
-  mapAsync,
-  paginationSelect,
-} from '../utils';
+import { distributedRandom, filterAsync, mapAsync, paginationSelect } from '../utils';
 import * as log4js from 'log4js';
 import { Page } from 'puppeteer-core';
 import { paginationToJump } from '../common';
@@ -93,7 +88,7 @@ export default async function (page: Page): Promise<Page> {
   }
 
   function followListFilter(tabListInfoSource: any[], tabListSource) {
-    let tabListInfo = _.cloneDeep(tabListInfoSource),
+    let tabListInfo,
       tabList = _.cloneDeep(tabListSource);
     //指定tag
     if (includesFollow.length !== 0) {
@@ -143,7 +138,7 @@ export default async function (page: Page): Promise<Page> {
         $target,
       );
       await page.util.wt(3, 6);
-      $target.click();
+      await $target.click();
     } catch (error) {
       if (++chooseFollowUpCount > 3) {
         logger.fatal('前往随机up失败', error);

@@ -211,10 +211,8 @@ class Judgement {
           return true;
         }
         const text = ['封禁', '小黑屋', '封了', '建议封', '小黑屋'];
-        if (text.some(v => el.content.includes(v))) {
-          return true;
-        }
-        return false;
+        return text.some(v => el.content.includes(v));
+
       }) || [];
     const ban = containProhibit(prohibitWords, originContent);
 

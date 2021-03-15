@@ -14,7 +14,7 @@ puppeteer.use(blockResourcesPlugin);
 export default async function (): Promise<Browser> {
   //@ts-ignore
   return puppeteer.launch({
-    headless: os.type() === 'Windows_NT' ? false : true,
+    headless: os.type() !== 'Windows_NT',
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
     defaultViewport: {
       width: 1500,

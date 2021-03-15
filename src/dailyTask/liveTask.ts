@@ -19,12 +19,14 @@ class Live {
   total: number = 0;
   //操作的页数
   pageNum: number = 0;
-  totalpages: number = 0;
+  totalPages: number = 0;
   /** 操作的房间下标 */
   index: number = -1;
   /** 页面中无法获取id,所以通过接口获取 */
   fansMedalList: FansMedalList = [];
-  $$room: Array<ElementHandle> = [];
+
+  // $$room: Array<ElementHandle> = [];
+
   constructor(page: Page) {
     this.page = page;
   }
@@ -40,7 +42,7 @@ class Live {
       logger.info(`现在访问勋章列表第1页`);
       await this.doOnePage();
       logger.debug(`本页执行完成,等待结束或前往下一页...`);
-      for (let i = 1; i < this.totalpages; i++) {
+      for (let i = 1; i < this.totalPages; i++) {
         await this.page.waitForTimeout(_.random(4000, 10000));
         await this.getNextPageMedal();
         logger.info(`现在访问勋章列表第${i + 1}页`);
@@ -57,7 +59,7 @@ class Live {
     if (this.fansMedalList.length === 0) {
       return;
     }
-    await this.addElement();
+    // await this.addElement();
     for (this.index = 0; this.index < this.fansMedalList.length; this.index++) {
       await this.doOne();
     }
@@ -117,7 +119,7 @@ class Live {
     const { data } = await medalPage1[0].json();
     this.fansMedalList = data.fansMedalList;
     this.total = data.count;
-    this.totalpages = data.pageinfo?.totalpages;
+    this.totalPages = data.pageinfo?.totalpages;
   }
 
   async getNextPageMedal() {
@@ -130,25 +132,25 @@ class Live {
   }
 
   /** 添加a元素 */
-  async addElement() {
-    this.$$room = [];
-    for (const fansMedal of this.fansMedalList) {
-      let $: ElementHandle = null;
-      try {
-        $ = await this.page.$(`a[title="${fansMedal.target_name}"]`);
-      } catch (error) {
-        logger.warn('获取房间地址失败', fansMedal.target_name, error);
-      }
-      this.$$room.push($);
-    }
-  }
+  // async addElement() {
+  //   this.$$room = [];
+  //   for (const fansMedal of this.fansMedalList) {
+  //     let $: ElementHandle = null;
+  //     try {
+  //       $ = await this.page.$(`a[title="${fansMedal.target_name}"]`);
+  //     } catch (error) {
+  //       logger.warn('获取房间地址失败', fansMedal.target_name, error);
+  //     }
+  //     this.$$room.push($);
+  //   }
+  // }
 
   /** 过滤直播间 */
   filterLiveRoom() {
     this.fansMedalList = this.fansMedalList
       .filter(medal => {
         const hasRoom = Boolean(medal.roomid);
-        // if (medal.todayFeed >= 100) return false;
+        if (medal.todayFeed >= 100) return false;
         /** 包括房间,该策略优先于排除 */
         if (includesRoom.length > 0) {
           return includesRoom.includes(medal.target_id) && hasRoom;
@@ -166,29 +168,29 @@ class Live {
   async gotoRoom() {
     const { target_name, medalName, level, roomid } = this.fansMedalList[
       this.index
-    ];
+      ];
     logger.info(`选择${target_name}--【${medalName}】(Lv.${level})`);
-    logger.trace('点击');
-    await Promise.race([
-      this.$$room[this.index]?.click(),
-      this.page.waitForTimeout(12000),
-    ]);
-    logger.trace('点击后');
-    try {
-      const liveTarget = await this.page
-        .browser()
-        .waitForTarget(
-          t => /^https?:\/\/live\.bilibili\.com\/\d+($|\?)/.test(t.url()),
-          { timeout: 12000 },
-        );
-      logger.trace('找到目标页面');
-      this.livePage = await liveTarget.page();
-    } catch (error) {
-      logger.debug('获取页面失败', error.message);
-      logger.debug('尝试直接前往直播间', target_name, roomid);
-      this.livePage = await this.page.browser().newPage();
-      await this.livePage.goto('https://live.bilibili.com/' + roomid);
-    }
+    // logger.trace('点击');
+    // await Promise.race([
+    //   this.$$room[this.index]?.click(),
+    //   this.page.waitForTimeout(12000),
+    // ]);
+    // logger.trace('点击后');
+    // try {
+    //   const liveTarget = await this.page
+    //     .browser()
+    //     .waitForTarget(
+    //       t => /^https?:\/\/live\.bilibili\.com\/\d+($|\?)/.test(t.url()),
+    //       { timeout: 12000 },
+    //     );
+    //   logger.trace('找到目标页面');
+    //   this.livePage = await liveTarget.page();
+    // } catch (error) {
+    //   logger.debug('获取页面失败', error.message);
+    //   logger.debug('尝试直接前往直播间', target_name, roomid);
+    this.livePage = await this.page.browser().newPage();
+    await this.livePage.goto('https://live.bilibili.com/' + roomid);
+    // }
     logger.debug('成功到达页面');
   }
 
@@ -198,22 +200,34 @@ class Live {
     const selector =
       'div.chat-input-ctnr.p-relative > div:nth-child(2) > textarea';
 
-    (async () => {
-      await this.livePage.waitForTimeout(4000);
-      this.livePage.screenshot({
-        path: `testimg/live-弹幕${Date.now()}.png`,
-      });
-    })();
-
-    const result = await Promise.race([
+    const $textarea = await Promise.race([
       this.livePage.util.$wait(selector),
       this.livePage.waitForTimeout(12000),
     ]);
-    if (!result) {
-      logger.info('直播间可能不允许评论/或者活动直播间(暂不支持)');
-      return;
+    if (!$textarea) {
+      logger.debug('直播间可能不允许评论或者是活动直播间');
+      const frame = this.livePage.frames().filter(frame => frame.url().includes('//live.bilibili.com/blanc/'))[0];
+      if (!frame) {
+        logger.info('直播间不能评论(未开启功能或者被封禁等)');
+        return;
+      }
+      await this.livePage.util.scroll(800);
+      const $textarea = await Promise.race([
+        Promise.all([
+          frame?.$(selector),
+          frame.waitForSelector(selector),
+        ]),
+        this.page.waitForTimeout(12000),
+      ]);
+      $text = $textarea?.[0];
+      if (!$text) {
+        logger.info('直播间情况不明');
+      }
+      logger.info('该直播间为活动直播间');
+    } else {
+      $text = $textarea;
     }
-    $text = result;
+
     const message = kaomoji[_.random(kaomoji.length - 1)];
     await $text.type(message, {
       delay: _.random(100, 200),
@@ -225,17 +239,17 @@ class Live {
   async closeLiveRoom() {
     try {
       if (!this.livePage.isClosed()) {
-        this.livePage.close();
+        await this.livePage.close();
       }
     } catch (error) {
       if (!this.livePage.isClosed()) {
-        this.livePage.close();
+        await this.livePage.close();
       }
     }
     logger.debug('关闭直播页面');
   }
 }
 
-export default async function (page: Page) {
+export default async function(page: Page) {
   return await new Live(page).init();
 }

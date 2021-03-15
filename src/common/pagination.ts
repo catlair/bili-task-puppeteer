@@ -7,7 +7,7 @@ export async function paginationToJump(
   logger?: Logger,
 ) {
   if (!logger) {
-    logger = (await import('log4js')).getLogger('aginationToJump');
+    logger = (await import('log4js')).getLogger('paginationToJump');
   }
   //跳转到页面,首页就不跳转了
   pageNum++; //从0开始数的

@@ -104,6 +104,8 @@ describe('string测试', () => {
     expect(
       containProhibit(prohibitWords, '你们荷兰人真是伤透了我的心！'),
     ).toBeTruthy();
+    // 为空
+    expect(containProhibit(prohibitWords, '')).toBeFalsy();
   });
 });
 

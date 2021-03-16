@@ -17,6 +17,7 @@ type ClickOptions = {
   clickCount?: number;
 };
 
+
 class Util {
   page: Page;
 
@@ -48,7 +49,7 @@ class Util {
   async $wait(
     selector: string,
     options?: WaitForSelectorOptions,
-  ): Promise<ElementHandle<Element>> {
+  ): Promise<ElementHandle> {
     await this.page.waitForSelector(selector, options);
     return await this.page.$(selector);
   }
@@ -61,7 +62,7 @@ class Util {
   async $$wait(
     selector: string,
     options?: WaitForSelectorOptions,
-  ): Promise<ElementHandle<Element>[]> {
+  ): Promise<ElementHandle[]> {
     await this.page.waitForSelector(selector, options);
     return await this.page.$$(selector);
   }
@@ -142,8 +143,8 @@ class Util {
     urlOrPredicate: string | Function | RegExp,
     options?: { timeout?: number },
   ) {
-    let tempUrlOrPredicate: string | Function;
-    (function () {
+    let tempUrlOrPredicate: string | Function = '';
+    (function() {
       if (typeof urlOrPredicate === 'string') {
         if (urlOrPredicate.startsWith('http')) {
           tempUrlOrPredicate = r => r.url().includes(urlOrPredicate);
@@ -197,10 +198,12 @@ class EvalPlugin extends PuppeteerExtraPlugin {
   }
 
   async onPageCreated(page: Page) {
-    page.util = new Util(page);
+    Object.defineProperty(page, 'util', {
+      value: new Util(page),
+    });
   }
 }
 
-module.exports = function (pluginConfig) {
+module.exports = function(pluginConfig) {
   return new EvalPlugin(pluginConfig);
 };

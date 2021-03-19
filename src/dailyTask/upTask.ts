@@ -60,12 +60,12 @@ export class UPTask {
         case 0:
           //视频
           (await this.commonHandle()) &&
-          (isStopCoin = await this.videoHandle());
+            (isStopCoin = await this.videoHandle());
           break;
         case 1:
           //音频
           (await this.commonHandle()) &&
-          (isStopCoin = await this.audioHandle());
+            (isStopCoin = await this.audioHandle());
           break;
         case 2:
           //专栏
@@ -270,10 +270,13 @@ export class UPTask {
       return false;
     }
     await this.page.util.wt(5, 10);
-    if (!DailyTask.share) {
-      await shareVideo(this.page, logger);
-      await this.page.util.wt(2, 4);
-    }
+
+    try {
+      if (!DailyTask.share) {
+        await shareVideo(this.page, logger);
+        await this.page.util.wt(2, 4);
+      }
+    } catch {}
 
     if (!(await this.isUp())) {
       logger.debug('视频up主非指定up主,放弃投币');
@@ -449,6 +452,6 @@ export class UPTask {
  *
  * 使用时需要注意设置延时,避免浏览器关闭太快
  */
-export default async function(page: Page, uid?: string | number) {
+export default async function (page: Page, uid?: string | number) {
   return await new UPTask(page, uid).init();
 }

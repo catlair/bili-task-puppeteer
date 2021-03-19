@@ -21,16 +21,22 @@ export default async function shareVideo(page: Page, logger?: Logger) {
     .browser()
     .waitForTarget(x => x.url().length > 500 && x.url().includes('share'));
   await page.waitForTimeout(_.random(4000, 7000));
+
+  let sharePage: Page;
   try {
     logger.trace('尝试关闭分享窗口');
     // ppeteer-extra-plugin-stealth 会报错
-    const sharePage = await target.page();
+    sharePage = await target.page();
     //随便等待的一个元素1
     await sharePage.waitForSelector('div');
-    await sharePage.close();
     logger.info('成功分享视频');
     DailyTask.share = true;
   } catch (error) {
     logger.error('分享视频失败', error);
+  } finally {
+    if (!sharePage.isClosed()) {
+      await sharePage.close();
+      logger.trace('关闭分享窗口');
+    }
   }
 }

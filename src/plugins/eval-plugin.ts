@@ -17,7 +17,6 @@ type ClickOptions = {
   clickCount?: number;
 };
 
-
 class Util {
   page: Page;
 
@@ -164,20 +163,33 @@ class Util {
     ]);
   }
 
-  wt(min: number, max: number, unit: 'ms' | 's' | 'm' | 'h' = 's') {
-    const ran = (min, max) => this.page.waitForTimeout(_.random(min, max));
+  wt(min: number, max: number, unit: 'ms' | 's' | 'm' | 'h');
+  wt(min: number, unit: 'ms' | 's' | 'm' | 'h');
+  wt(min: number, max: any, unit: 'ms' | 's' | 'm' | 'h' = 's') {
+    let baseTime = 1;
     switch (unit) {
       case 'ms':
-        return ran(min, max);
+        break;
       case 's':
-        return ran(min * 1000, max * 1000);
+        baseTime = 1000;
+        break;
       case 'm':
-        return ran(min * 60000, max * 60000);
+        baseTime = 60000;
+        break;
       case 'h':
-        return ran(min * 3600000, max * 3600000);
+        baseTime = 3600000;
+        break;
       default:
-        return ran(min * 1000, max * 1000);
+        baseTime = 1000;
     }
+    const ran = async () => {
+      if (typeof max === 'string') {
+        await this.page.waitForTimeout(min * baseTime);
+      } else {
+        await this.page.waitForTimeout(_.random(min * baseTime, max * baseTime));
+      }
+    };
+    return ran();
   }
 
   /** 页面增加lodash */

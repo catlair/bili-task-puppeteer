@@ -1,17 +1,18 @@
- FROM catlair/alpine-chromium:3.12-86
+FROM catlair/alpine-chromium:latest
 
- WORKDIR /usr/src/app
+WORKDIR /usr/src/app
 
-#  COPY --chown=chrome ./ ./
+COPY --chown=chrome ["./dist", "./dist"]
+COPY --chown=chrome package.json package-lock.json ./
 
- ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1 \
+ENTRYPOINT ["tini", "--"]
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1 \
      PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-#  RUN npm config set registry https://registry.npm.taobao.org \
-#      && chown -R chrome ./ \
-#      && npm install \
-#      && npm prune --production
+# npm config set registry https://registry.npm.taobao.org \
+RUN chown -R chrome ./ \
+     && npm install --production \
+     && npm prune --production
 
-#  ENTRYPOINT ["tini", "--"]
-
- CMD [ "node", "index.js" ]
+CMD ["node", "dist/index.js" ]

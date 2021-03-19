@@ -35,6 +35,7 @@ class Judgement {
   errorCount: number = 0;
   voteGetErrorCount: number = 0;
   isHomePage: boolean = true;
+
   constructor(page: Page) {
     this.page = page;
     //1 继续 -1 没有了 0 完成了
@@ -43,20 +44,20 @@ class Judgement {
 
   async init() {
     await this.goBlackHouse();
-    await this.page.waitForTimeout(_.random(3000, 6000));
+    await this.page.util.wt(3, 6);
     await this.closeSummary();
-    await this.page.waitForTimeout(_.random(3000, 6000));
+    await this.page.util.wt(3, 6);
     await this.doVote();
     while (this.isRun === 1) {
       try {
-        await this.page.waitForTimeout(_.random(3000, 7000));
+        await this.page.util.wt(3, 7);
         await this.doVote();
       } catch (error) {
         this.errorCount++;
-        logger.error('执行过程发生异常', this.errorCount, error);
+        logger.error('执行过程发生异常', this.errorCount, error.message);
         if (this.errorCount > MAX_ERROR_COUNT) {
           logger.fatal('致命异常: 异常次数过多,退出执行');
-          return;
+          throw new Error(error.message);
         }
       }
     }
@@ -135,7 +136,7 @@ class Judgement {
       const { data: voteOpinionRed } = jsonpToJson(await juryVoteRed.text()),
         { data: voteOpinionBlue } = jsonpToJson(await juryVoteBlue.text());
 
-      await this.page.waitForTimeout(_.random(4000, 10000));
+      await this.page.util.wt(4, 10);
 
       return {
         originContent,
@@ -151,16 +152,16 @@ class Judgement {
       if (++this.voteGetErrorCount > MAX_ERROR_COUNT) {
         logger.error('获取案件错误次数过多');
         this.errorCount = MAX_ERROR_COUNT;
-        throw new Error(error);
+        throw new Error(error.message);
       }
-      logger.debug('获取案件失败', error);
+      logger.debug('获取案件失败', error.message);
     }
   }
 
   async voteHandle(data: VoteDecisionOption) {
     const myVote = this.makeDecision(data);
     await this.randomEvent();
-    await this.page.waitForTimeout(_.random(4000, 10000));
+    await this.page.util.wt(4, 10);
 
     //这里之所以转来转去,是因为makeDecision是其他地方拿来直接用的,那里需要的是number
     //而这里无所谓用数字还是汉子
@@ -170,28 +171,28 @@ class Judgement {
         break;
       case '封禁':
         await this.chooseRed();
-        await this.page.waitForTimeout(_.random(5000, 20000));
+        await this.page.util.wt(5, 10);
         await this.recommendBan();
         break;
       case '删除':
         await this.chooseRed();
-        await this.page.waitForTimeout(_.random(5000, 20000));
+        await this.page.util.wt(5, 20);
         await this.recommendDelete();
         break;
       default:
         return;
     }
-    await this.page.waitForTimeout(_.random(2000, 4000));
+    await this.page.util.wt(5, 20);
     await this.submitHandle();
   }
 
   makeDecision({
-    voteDelete = 0,
-    voteRule = 0,
-    originContent = '',
-    voteOpinionBlue,
-    voteOpinionRed,
-  }: VoteDecisionOption): VoteType {
+                 voteDelete = 0,
+                 voteRule = 0,
+                 originContent = '',
+                 voteOpinionBlue,
+                 voteOpinionRed,
+               }: VoteDecisionOption): VoteType {
     //瞎鸡*计算怎么投票
     let myVote: VoteType = 4;
 
@@ -310,7 +311,8 @@ class Judgement {
         { timeout: 10000 },
       );
       await $btn.click();
-    } catch (error) {}
+    } catch (error) {
+    }
   }
 
   async randomEvent() {
@@ -324,7 +326,7 @@ class Judgement {
       for (let i = 0; i < $$content.length; i++) {
         if (Math.random() > Math.random()) {
           await $$content[i].click();
-          await this.page.waitForTimeout(_.random(6000, 15000));
+          await this.page.util.wt(6, 15);
           await $$content[i].click();
         }
       }
@@ -334,6 +336,6 @@ class Judgement {
   }
 }
 
-export default async function (page: Page) {
+export default async function(page: Page) {
   return await new Judgement(page).init();
 }

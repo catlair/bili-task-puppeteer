@@ -1,15 +1,21 @@
-import { distributedRandom, filterAsync, mapAsync, paginationSelect } from '../utils';
+import {
+  distributedRandom,
+  filterAsync,
+  mapAsync,
+  paginationSelect,
+} from '../utils';
 import * as log4js from 'log4js';
 import { Page } from 'puppeteer-core';
 import { paginationToJump } from '../common';
 import * as _ from 'lodash';
+import { DailyTask } from '../config/globalVar';
 
 const logger = log4js.getLogger('upTask');
 
-const includesFollow = ['特别关注'];
-const excludesFollow = [];
+const includesFollow = DailyTask.includesFollow;
+const excludesFollow = DailyTask.excludesFollow;
 
-export default async function (page: Page): Promise<Page> {
+export default async function(page: Page): Promise<Page> {
   let upTargetPage: Page = null,
     gotoFollowPageCount = 0,
     chooseFollowTagCount = 0,
@@ -32,8 +38,8 @@ export default async function (page: Page): Promise<Page> {
       logger.trace('到达关注页面');
     } catch (error) {
       if (++gotoFollowPageCount > 3) {
-        logger.fatal('前往关注页面异常', error);
-        return;
+        logger.fatal('前往关注页面异常');
+        throw new Error(error);
       }
       logger.warn('前往关注页面异常', error.message);
       await gotoFollowPage();
@@ -78,8 +84,8 @@ export default async function (page: Page): Promise<Page> {
       upTargetValue = value;
     } catch (error) {
       if (++chooseFollowTagCount > 3) {
-        logger.fatal('切换tag异常', error);
-        return;
+        logger.fatal('切换tag异常');
+        throw new Error(error);
       }
       logger.warn('切换tag异常', error.message);
       await page.reload();
@@ -87,13 +93,21 @@ export default async function (page: Page): Promise<Page> {
     }
   }
 
-  function followListFilter(tabListInfoSource: any[], tabListSource) {
+  function followListFilter(
+    tabListInfoSource: {
+      followNum: number;
+      tagName: string;
+    }[],
+    tabListSource,
+  ) {
     let tabListInfo,
       tabList = _.cloneDeep(tabListSource);
     //指定tag
     if (includesFollow.length !== 0) {
       tabListInfo = tabListInfoSource.filter((el, index) => {
-        const isKeep = includesFollow.includes(el.tagName);
+        // 不包含的和数量为0都应该去除
+        const isKeep =
+          includesFollow.includes(el.tagName) && el.followNum !== 0;
         if (!isKeep) {
           tabList[index] = null;
         }
@@ -101,7 +115,8 @@ export default async function (page: Page): Promise<Page> {
       });
     } else {
       tabListInfo = tabListInfoSource.filter((el, index) => {
-        const isKeep = !excludesFollow.includes(el.tagName);
+        const isKeep =
+          !excludesFollow.includes(el.tagName) && el.followNum !== 0;
         if (!isKeep) {
           tabList[index] = null;
         }
@@ -109,8 +124,10 @@ export default async function (page: Page): Promise<Page> {
       });
     }
     if (tabListInfo.length === 0) {
-      tabListInfo = _.cloneDeep(tabListInfoSource);
-      tabList = _.cloneDeep(tabListSource);
+      return {
+        tabList: tabListSource,
+        tabListInfo: tabListInfoSource,
+      };
     }
     return { tabListInfo, tabList };
   }
@@ -141,8 +158,8 @@ export default async function (page: Page): Promise<Page> {
       await $target.click();
     } catch (error) {
       if (++chooseFollowUpCount > 3) {
-        logger.fatal('前往随机up失败', error);
-        return;
+        logger.fatal('前往随机up失败');
+        throw new Error(error);
       }
       logger.warn('前往随机up失败', error.message);
       await page.reload();
@@ -151,30 +168,29 @@ export default async function (page: Page): Promise<Page> {
   }
 
   async function getTargetPage() {
-    const upTarget = await page
-      .browser()
-      .waitForTarget(t => t.url().includes(`space.bilibili.com/${uid}`), {
-        timeout: 12000,
-      });
-    logger.trace('找到目标页面');
-    upTargetPage = await upTarget.page();
+    try {
+      const upTarget = await page
+        .browser()
+        .waitForTarget(t => t.url().includes(`space.bilibili.com/${uid}`), {
+          timeout: 12000,
+        });
+      logger.trace('找到目标页面');
+      upTargetPage = await upTarget.page();
+    } catch (error) {
+      logger.error(error);
+    }
   }
 
   async function run() {
     //判断是否已经有过该页面
-    try {
-      const pages = await page.browser().pages();
-      const followPage = pages.filter(page =>
-        page.url().match(/\/\/space\.bilibili\.com\/\d+\/fans\/follow/),
-      )[0];
-      if (!followPage) {
-        await gotoFollowPage();
-      } else {
-        page = followPage;
-      }
-    } catch (error) {
-      logger.warn(error.message);
+    const pages = await page.browser().pages();
+    const followPage = pages.filter(page =>
+      page.url().match(/\/\/space\.bilibili\.com\/\d+\/fans\/follow/),
+    )[0];
+    if (!followPage) {
       await gotoFollowPage();
+    } else {
+      page = followPage;
     }
     await chooseFollowTag();
     await chooseFollowUp();

@@ -6,6 +6,7 @@ import { UserInfoNavDto } from '../dto/UserInfo.dto';
 import { paginationToJump } from '../common';
 import { DailyTask } from '../config/globalVar';
 import shareVideo from './shareVideo';
+import playVideo from './playVideo';
 
 const logger = log4js.getLogger('upTask');
 
@@ -15,8 +16,8 @@ enum Contribute {
   '专栏',
 }
 
-const ONE_COIN_EXP = 10;
-const MAX_ADD_COIN_EXP = 50;
+const ONE_COIN_EXP = DailyTask.ONE_COIN_EXP;
+const MAX_ADD_COIN_EXP = DailyTask.MAX_ADD_COIN_EXP;
 
 export class UPTask {
   page: Page;
@@ -60,12 +61,12 @@ export class UPTask {
         case 0:
           //视频
           (await this.commonHandle()) &&
-            (isStopCoin = await this.videoHandle());
+          (isStopCoin = await this.videoHandle());
           break;
         case 1:
           //音频
           (await this.commonHandle()) &&
-            (isStopCoin = await this.audioHandle());
+          (isStopCoin = await this.audioHandle());
           break;
         case 2:
           //专栏
@@ -250,19 +251,9 @@ export class UPTask {
     return res;
   }
 
-  async playVideo() {
-    try {
-      logger.debug('播放视频...');
-      const $video = await this.page.$('video');
-      await $video.click();
-    } catch (e) {
-      logger.error('环境不支持点击视频', e);
-    }
-  }
-
   async videoHandle(): Promise<boolean> {
     await this.page.waitForTimeout(3000);
-    await this.playVideo();
+    await playVideo(this.page, logger);
     const videoUrl = this.page.url();
     if (!videoUrl.includes('//www.bilibili.com/video/')) {
       logger.info('特殊视频暂不支持分享投币...');
@@ -276,7 +267,8 @@ export class UPTask {
         await shareVideo(this.page, logger);
         await this.page.util.wt(2, 4);
       }
-    } catch {}
+    } catch {
+    }
 
     if (!(await this.isUp())) {
       logger.debug('视频up主非指定up主,放弃投币');
@@ -383,6 +375,10 @@ export class UPTask {
       return Number(multiply);
     }
     logger.warn('投币失败', code, message);
+    if (code === 137004) {
+      logger.fatal(message, '结束任务执行');
+      process.exit(0);
+    }
     return 0;
   }
 
@@ -452,6 +448,9 @@ export class UPTask {
  *
  * 使用时需要注意设置延时,避免浏览器关闭太快
  */
-export default async function (page: Page, uid?: string | number) {
+export default async function(page: Page, uid?: string | number) {
+  if (!page) {
+    throw new Error('不存在的页面');
+  }
   return await new UPTask(page, uid).init();
 }

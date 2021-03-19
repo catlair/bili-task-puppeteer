@@ -7,7 +7,7 @@ export default async function shareVideo(page: Page, logger?: Logger) {
   if (!logger) {
     logger = getLogger('shareVideo');
   }
-  logger.info('-----开始分享视频-----');
+  logger.debug('开始分享视频');
   await page.waitForTimeout(_.random(2000, 5000));
   await page.hover('.share');
   const $$btn = await page.util.$$wait('.share-btn');

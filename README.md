@@ -4,17 +4,26 @@
 
 ## 尝鲜说明
 
-- 无配置文件(除 cookie 以`TEST_COOKIE`保存在 env 或者.env 中)
-- 直播间屏蔽部分直接在 liveTask 中的常量改
-- 关注列表包含/投币直接修改 upTask 中的常量
-- dockerfile 文件只是方便测试制作的(虽然预计运行方式也是 docker)
-  ,运行方式`docker run -it --rm -v $(pwd)/dist:/usr/src/app/dist --cap-add=SYS_ADMIN 镜像名 node ./dist/index.js`
+`v0.0.1`版本的配置内容十分简单, 参考`src/config/config.demo.json`配置`src/config/config.json`即可,不要填写错误(json 是不允许有注释的,前者只是参考)
 
-## 正在做的功能
+### Action 运行
 
-- ~~暂时没有想添加的内容~~
-- 当前存在功能测试~~稳定~~后增加配置的功能
-- 修改live后进行一定时间的观察(~~目前情况比之前好很多~~), 并同时增加了对活动直播间的支持
+将完整 cookie 保存`github secrets`为`BILI_COOKIE`  
+参考/运行`.github/workflows/bilibili-task.yaml`
+
+### docker 运行
+
+除了基本的配置还需要单独配置 cookie,可以使用`--env`添加`BILI_COOKIE`(参考 action 运行)。或者修改 Dockerfile 进行构建(在工作目录添加一个`.env`文件`BILI-COOKIE="cookie"`)等方法
+`docker run -it --rm -v $(pwd):/usr/src/app --cap-add=SYS_ADMIN catlair/bilitaskpuppeteer node ./dist/index.js`  
+如果出现权限问题请添加`--user root`参数
+
+### 本地直接运行
+
+本地需要安装`Node.js`编译和运行版本最好 12+  
+需要安装 chrome/chromium/chromium-edge 等`chromium`浏览器版本最好在 79 之上  
+配置环境变量`PUPPETEER_EXECUTABLE_PATH=浏览器可执行文件路径`  
+例如`PUPPETEER_EXECUTABLE_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`  
+使用`.env`配置 cookie 和是否开启无头模式(除了 window 平台其余默认都是`false`)
 
 ### 支持的功能
 
@@ -24,26 +33,24 @@
 - 给指定 uid 的 up 投币
 - 从首页推荐选择投币
 - 给关注用户投币
-- 直播发送弹幕,headless 存在大量问题
+- 直播发送弹幕,headless ~~存在大量问题~~存在偶尔漏过部分的 bug
 
 ## 暂时无法解决的问题
 
-- 试图拦截 request 直接修改某些请求,实际上 puppeteer 不支持串行的拦截,导致此行为和第三方的包有所冲突
-  <https://github.com/puppeteer/puppeteer/pull/6735>
-
 - ~~live 在 headless 模式下可能存在多次失败和重试并后续出现卡死的风险~~(修改能运行模式, 目前在观察中,由于某种原因导致测试样本减少,时间将加长)
-
-- 由于对ts的不熟悉, 在增加了util后,tsc编译通过,ts-node直接执行却失败
-
-## 注意
-
-- 为了不同环境的统一,chrome 的路径将由环境变量(`PUPPETEER_EXECUTABLE_PATH`)决定
 
 ## 被忽略的问题
 
 - 自定义关注分组请注意分组中的 up 数量(主要是 up 的投稿总数量),过低会导致一直找不到可投币目标,直到无法控制 ( **没必要修改的问题自己避免即可** )
 
-- UP主的部分视频可能是纪录片或者活动作品,界面不同会导致无法进行操作, 打开此类视频后会 **关闭页面并重新选择内容**
+- UP 主的部分视频可能是纪录片或者活动作品,界面不同会导致无法进行操作, 打开此类视频后会 **关闭页面并重新选择内容**
+
+- 环境中不存在开发时依赖`ts-node`, 如需要请自行安装
+
+## 一些设想
+
+- 试图拦截 request 直接修改某些请求,实际上 puppeteer 不支持串行的拦截,导致此行为和第三方的包有所冲突
+  <https://github.com/puppeteer/puppeteer/pull/6735>
 
 ## 参考项目
 

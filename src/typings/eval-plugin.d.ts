@@ -51,11 +51,8 @@ declare module 'puppeteer-core' {
        * @param max
        * @param unit 默认秒
        */
-      wt(
-        min: number,
-        max: number,
-        unit?: 'ms' | 's' | 'm' | 'h',
-      ): Promise<void>;
+      wt(min: number, max: number, unit?: 'ms' | 's' | 'm' | 'h'): Promise<void>;
+      wt(min: number, unit?: 'ms' | 's' | 'm' | 'h'): Promise<void>;
 
       /**
        *

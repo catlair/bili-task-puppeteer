@@ -3,14 +3,15 @@ import * as _ from 'lodash';
 import * as log4js from 'log4js';
 import { ElementHandle, HTTPResponse, Page } from 'puppeteer-core';
 import { paginationToJump } from '../common';
+import { DailyTask } from '../config/globalVar';
 
 type FansMedalList = FansMedalDto['data']['fansMedalList'];
 
 const logger = log4js.getLogger('live');
 const kaomoji = require('../config/kaomoji.json');
 
-const excludesRoom = [20165629];
-const includesRoom = [];
+const excludesRoom = DailyTask.excludesLiveRoom;
+const includesRoom = DailyTask.includesLiveRoom;
 
 class Live {
   page: Page;
@@ -25,8 +26,6 @@ class Live {
   index: number = -1;
   /** 页面中无法获取id,所以通过接口获取 */
   fansMedalList: FansMedalList = [];
-
-  // $$room: Array<ElementHandle> = [];
 
   constructor(page: Page) {
     this.page = page;
@@ -61,7 +60,6 @@ class Live {
     if (this.fansMedalList.length === 0) {
       return;
     }
-    // await this.addElement();
     for (this.index = 0; this.index < this.fansMedalList.length; this.index++) {
       await this.doOne();
     }
@@ -131,20 +129,6 @@ class Live {
     }
   }
 
-  /** 添加a元素 */
-  // async addElement() {
-  //   this.$$room = [];
-  //   for (const fansMedal of this.fansMedalList) {
-  //     let $: ElementHandle = null;
-  //     try {
-  //       $ = await this.page.$(`a[title="${fansMedal.target_name}"]`);
-  //     } catch (error) {
-  //       logger.warn('获取房间地址失败', fansMedal.target_name, error);
-  //     }
-  //     this.$$room.push($);
-  //   }
-  // }
-
   /** 过滤直播间 */
   filterLiveRoom() {
     this.fansMedalList = this.fansMedalList
@@ -170,24 +154,6 @@ class Live {
       this.index
       ];
     logger.info(`选择${target_name}--【${medalName}】(Lv.${level})`);
-    // logger.trace('点击');
-    // await Promise.race([
-    //   this.$$room[this.index]?.click(),
-    //   this.page.waitForTimeout(12000),
-    // ]);
-    // logger.trace('点击后');
-    // try {
-    //   const liveTarget = await this.page
-    //     .browser()
-    //     .waitForTarget(
-    //       t => /^https?:\/\/live\.bilibili\.com\/\d+($|\?)/.test(t.url()),
-    //       { timeout: 12000 },
-    //     );
-    //   logger.trace('找到目标页面');
-    //   this.livePage = await liveTarget.page();
-    // } catch (error) {
-    //   logger.debug('获取页面失败', error.message);
-    //   logger.debug('尝试直接前往直播间', target_name, roomid);
     this.livePage = await this.page.browser().newPage();
     await this.livePage.goto('https://live.bilibili.com/' + roomid);
     // }

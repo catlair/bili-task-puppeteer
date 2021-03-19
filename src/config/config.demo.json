@@ -1,0 +1,27 @@
+// 带注释的模板
+{
+  "function": {
+    //风纪委员任务
+    "juryTask": false,
+    //给指定uid的up投币
+    "coinByUID": false,
+    //从首页推荐选择投币
+    "coinByRecommend": false,
+    // 给关注用户投币;
+    "coinByFollow": true,
+    // 分享;
+    "watchAndShare": true,
+    // 发送直播弹幕
+    "liveTask": false
+  },
+  // 发送弹幕排除的直播间, 与下面的排除列表冲突, 同时出现时包含列表优先
+  "excludesLiveRoom": [20165629],
+  // 发送弹幕包含的直播间
+  "includesLiveRoom": [],
+  // 关注列表中仅包含的列表, 程序只会在以下列表中选择(如果存在的话), 与下面的排除列表冲突,同时存在时包含列表优先
+  "includesFollow": ["特别关注"],
+  // 关注列表中排除的列表
+  "excludesFollow": [],
+  // 自定义的up列表, 不推荐使用, 可以将喜欢的up加入一个分组,然后添加进上面的includesFollow
+  "CUSTOMIZE_UP": []
+}

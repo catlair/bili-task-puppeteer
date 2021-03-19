@@ -10,6 +10,8 @@ import { DailyTask } from './config/globalVar';
 import shareVideo from './dailyTask/shareVideo';
 import videoTask from './dailyTask/videoTask';
 import liveTask from './dailyTask/liveTask';
+import { paginationToJump } from './common';
+
 require('dotenv').config();
 
 log4js.configure('./src/config/log4js.json');
@@ -21,7 +23,7 @@ const logger = log4js.getLogger('test');
   const browser = await createBrowser();
   const page = await browser.newPage();
   await page.setCookie(
-    ...getCookies(process.env.TEST_COOKIE3, '.bilibili.com'),
+    ...getCookies(process.env.TEST_COOKIE, '.bilibili.com'),
   );
 
   //   isRun = await judgement(page);
@@ -47,23 +49,23 @@ const logger = log4js.getLogger('test');
 
   //从首页推荐选择投币
   // while (!(await videoTask(await homeVideo(page)))) {
-  // await page.waitForTimeout(_.random(2000, 6000));
+  //   await page.waitForTimeout(_.random(2000, 6000));
   // }
 
-  //给关注用户投币
-  while (!(await upTask(await getFollow(page)))) {
-    await page.waitForTimeout(_.random(2000, 6000));
-  }
-  //分享
-  if (!DailyTask.share) {
-    const videoPage = await homeVideo(page);
-    await page.util.wt(3, 6);
-    await shareVideo(videoPage);
-  }
+  // // 给关注用户投币;
+  // while (!(await upTask(await getFollow(page)))) {
+  //   await page.waitForTimeout(_.random(2000, 6000));
+  // }
+  // //分享
+  // if (!DailyTask.share) {
+  //   const videoPage = await homeVideo(page);
+  //   await page.util.wt(3, 6);
+  //   await shareVideo(videoPage);
+  // }
 
-  //直播发送弹幕,headless存在大量问题
+  // 直播发送弹幕, headless存在大量问题;
   await liveTask(page);
 
-  // await page.util.wt(3, 6);
-  // await browser.close();
+  await page.util.wt(3, 6);
+  await browser.close();
 })();

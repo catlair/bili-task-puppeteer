@@ -5,6 +5,7 @@ export async function paginationToJump(
   page: Page,
   pageNum: number,
   logger?: Logger,
+  inputSelector: string = '.be-pager-options-elevator .space_input',
 ) {
   if (!logger) {
     logger = (await import('log4js')).getLogger('paginationToJump');
@@ -15,9 +16,7 @@ export async function paginationToJump(
   if (pageNum === 1) return;
 
   await page.util.scrollDown();
-  const $input = await page.util.$wait(
-    '.be-pager-options-elevator .space_input',
-  );
+  const $input = await page.util.$wait(inputSelector);
   await $input.focus();
   await page.keyboard.type(pageNum.toString(), { delay: 1000 });
   await page.keyboard.press('Enter', { delay: 500 });

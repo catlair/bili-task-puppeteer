@@ -2,6 +2,7 @@ import { FansMedalDto } from '../dto/Live.dto';
 import * as _ from 'lodash';
 import * as log4js from 'log4js';
 import { ElementHandle, HTTPResponse, Page } from 'puppeteer-core';
+import { paginationToJump } from '../common';
 
 type FansMedalList = FansMedalDto['data']['fansMedalList'];
 
@@ -43,6 +44,7 @@ class Live {
       await this.doOnePage();
       logger.debug(`本页执行完成,等待结束或前往下一页...`);
       for (let i = 1; i < this.totalPages; i++) {
+        this.pageNum = i;
         await this.page.waitForTimeout(_.random(4000, 10000));
         await this.getNextPageMedal();
         logger.info(`现在访问勋章列表第${i + 1}页`);
@@ -67,24 +69,7 @@ class Live {
   }
 
   async goNextPage() {
-    // 使用click会显示元素不可见或不存在,改成js能行
-    // .... 发生卡死的情况暂未处理
-    const click = () =>
-      Promise.race([
-        this.page.util.evalClick(
-          'div.operation-page.page-medal > div.link-panigation-ctnr.t-right > ul > li:last-child',
-        ),
-        async () => {
-          await this.page.waitForTimeout(12000);
-          return Promise.reject('timeout 12000');
-        },
-      ]);
-    try {
-      await click();
-    } catch (error) {
-      await this.page.reload();
-      await click();
-    }
+    return await paginationToJump(this.page, this.pageNum, logger, 'input.jumping-input');
   }
 
   async doOne() {
@@ -123,12 +108,27 @@ class Live {
   }
 
   async getNextPageMedal() {
-    const [res] = await Promise.all([
-        this.getMedalResponse(),
-        this.goNextPage(),
-      ]),
-      { data } = await res.json();
-    this.fansMedalList = data.fansMedalList;
+    // 有待观察...
+    const getMedal = async () => {
+      const [res] = await Promise.race([
+        Promise.all([
+          this.getMedalResponse(),
+          this.goNextPage(),
+        ]),
+        (async () => {
+          await this.page.waitForTimeout(12000);
+          return Promise.reject('超时12000ms');
+        })(),
+      ]);
+      const { data } = await res.json();
+      this.fansMedalList = data.fansMedalList;
+    };
+    try {
+      await getMedal();
+    } catch (error) {
+      logger.debug('获取下一页出现错误', error);
+      await getMedal();
+    }
   }
 
   /** 添加a元素 */
@@ -206,17 +206,16 @@ class Live {
     ]);
     if (!$textarea) {
       logger.debug('直播间可能不允许评论或者是活动直播间');
-      const frame = this.livePage.frames().filter(frame => frame.url().includes('//live.bilibili.com/blanc/'))[0];
+      const frame = this.livePage
+        .frames()
+        .filter(frame => frame.url().includes('//live.bilibili.com/blanc/'))[0];
       if (!frame) {
         logger.info('直播间不能评论(未开启功能或者被封禁等)');
         return;
       }
       await this.livePage.util.scroll(800);
       const $textarea = await Promise.race([
-        Promise.all([
-          frame?.$(selector),
-          frame.waitForSelector(selector),
-        ]),
+        Promise.all([frame?.$(selector), frame.waitForSelector(selector)]),
         this.page.waitForTimeout(12000),
       ]);
       $text = $textarea?.[0];

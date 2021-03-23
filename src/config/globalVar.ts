@@ -1,5 +1,5 @@
 require('dotenv').config();
-const userConfig = require('./config.json');
+const userConfig = require('../../config/config.json');
 
 //任务完成情况统计
 export abstract class DailyTask {

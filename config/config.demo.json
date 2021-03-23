@@ -1,8 +1,6 @@
 // 带注释的模板
 {
   "function": {
-    //风纪委员任务
-    "juryTask": false,
     //给指定uid的up投币
     "coinByUID": false,
     //从首页推荐选择投币

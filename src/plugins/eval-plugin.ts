@@ -11,6 +11,7 @@ import * as path from 'path';
 
 const { PuppeteerExtraPlugin } = require('puppeteer-extra-plugin');
 
+type timeUnit = 'ms' | 's' | 'm' | 'h';
 type ClickOptions = {
   delay?: number;
   button?: MouseButton;
@@ -143,7 +144,7 @@ class Util {
     options?: { timeout?: number },
   ) {
     let tempUrlOrPredicate: string | Function = '';
-    (function() {
+    (function () {
       if (typeof urlOrPredicate === 'string') {
         if (urlOrPredicate.startsWith('http')) {
           tempUrlOrPredicate = r => r.url().includes(urlOrPredicate);
@@ -163,9 +164,10 @@ class Util {
     ]);
   }
 
-  wt(min: number, max: number, unit: 'ms' | 's' | 'm' | 'h');
-  wt(min: number, unit: 'ms' | 's' | 'm' | 'h');
-  wt(min: number, max: any, unit: 'ms' | 's' | 'm' | 'h' = 's') {
+  wt(min: number, max: number, unit: timeUnit);
+  wt(min: number, unit: timeUnit);
+  wt(min: number, max: any = 's', unit: timeUnit = 's') {
+    unit = typeof max === 'string' ? (max as timeUnit) : unit;
     let baseTime = 1;
     switch (unit) {
       case 'ms':
@@ -186,7 +188,9 @@ class Util {
       if (typeof max === 'string') {
         await this.page.waitForTimeout(min * baseTime);
       } else {
-        await this.page.waitForTimeout(_.random(min * baseTime, max * baseTime));
+        await this.page.waitForTimeout(
+          _.random(min * baseTime, max * baseTime),
+        );
       }
     };
     return ran();
@@ -216,6 +220,6 @@ class EvalPlugin extends PuppeteerExtraPlugin {
   }
 }
 
-module.exports = function(pluginConfig) {
+module.exports = function (pluginConfig) {
   return new EvalPlugin(pluginConfig);
 };

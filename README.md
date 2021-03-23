@@ -4,7 +4,7 @@
 
 ## 尝鲜说明
 
-`v0.0.1`版本的配置内容十分简单, 参考`src/config/config.demo.json`配置`src/config/config.json`即可,不要填写错误(json 是不允许有注释的,前者只是参考)
+`v0.0.1`版本的配置内容十分简单, 参考`config/config.demo.json`配置`config/config.json`即可,不要填写错误(json 是不允许有注释的,前者只是参考)
 
 ### Action 运行
 
@@ -19,11 +19,10 @@
 
 ### 本地直接运行
 
-本地需要安装`Node.js`编译和运行版本最好 12+  
-需要安装 chrome/chromium/chromium-edge 等`chromium`浏览器版本最好在 79 之上  
+本地需要安装`Node.js`编译和运行,版本最好 12+  
+需要安装 chrome/chromium/chromium-edge 等`chromium`浏览器,版本最好在 79+
 配置环境变量`PUPPETEER_EXECUTABLE_PATH=浏览器可执行文件路径`  
-例如`PUPPETEER_EXECUTABLE_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`  
-使用`.env`配置 cookie 和是否开启无头模式(除了 window 平台其余默认都是`false`)
+例如`PUPPETEER_EXECUTABLE_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 
 ### 支持的功能
 

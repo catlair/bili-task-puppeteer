@@ -1,0 +1,14 @@
+{
+  "function": {
+    "coinByUID": false,
+    "coinByRecommend": false,
+    "coinByFollow": true,
+    "watchAndShare": true,
+    "liveTask": false
+  },
+  "excludesLiveRoom": [20165629],
+  "includesLiveRoom": [],
+  "includesFollow": ["特别关注"],
+  "excludesFollow": [],
+  "CUSTOMIZE_UP": []
+}

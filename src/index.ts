@@ -1,25 +1,31 @@
-import * as path from 'path';
-
 require('dotenv').config();
 import { FunConfig, OSConfig } from './config/globalVar';
-import { coinByFollow, coinByRecommend, coinByUID, juryTask, liveTask, watchAndShare } from './dailyTask';
+import {
+  coinByFollow,
+  coinByRecommend,
+  coinByUID,
+  juryTask,
+  liveTask,
+  watchAndShare,
+} from './dailyTask';
 import { getCookies } from './utils';
 import createBrowser from './createbBrowser';
+import * as path from 'path';
 import * as log4js from 'log4js';
 
 log4js.configure(path.resolve(__dirname, './config/log4js.json'));
-const logger = log4js.getLogger('test');
 
 (async () => {
+  if (process.env.BILI_TASK_JURY?.toLowerCase() === 'true') {
+    //风纪委员任务
+    await juryTask();
+    return;
+  }
+
   const browser = await createBrowser();
-  const page = await browser.newPage();
+  let page = await browser.newPage();
   try {
     await page.setCookie(...getCookies(OSConfig.COOKIE, '.bilibili.com'));
-    //风纪委员任务
-    if (FunConfig.juryTask) {
-      await juryTask(page, logger);
-    }
-
     //给指定uid的up投币
     if (FunConfig.coinByUID) {
       await coinByUID(page);
@@ -28,22 +34,18 @@ const logger = log4js.getLogger('test');
     if (FunConfig.coinByRecommend) {
       await coinByRecommend(page);
     }
-
     // 给关注用户投币;
     if (FunConfig.coinByFollow) {
       await coinByFollow(page);
     }
-
     // 分享;
     if (FunConfig.watchAndShare) {
       await watchAndShare(page);
     }
-
     // 直播发送弹幕, headless存在大量问题;
     if (FunConfig.liveTask) {
       await liveTask(page);
     }
-
   } finally {
     await page.util.wt(3, 6);
     await browser.close();

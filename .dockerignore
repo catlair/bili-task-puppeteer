@@ -1,0 +1,12 @@
+*
+*/**
+
+## 需要复制进docker的文件
+!package-lock.json
+!package.json
+!tsconfig.json
+!src/*
+!babel.config.json
+
+## 复制config是为了设置默认值
+!config/config.json

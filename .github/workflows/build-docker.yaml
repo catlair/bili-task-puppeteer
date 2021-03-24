@@ -11,21 +11,7 @@ jobs:
     steps:
       # 检出
       - name: Checkout
-        uses:
-          actions/checkout@v2
-          # 环境
-      - name: Use Node.js 14
-        uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      # 安装依赖
-      - name: Install dependencies
-        run: npm install
-
-      # 构建应用
-      - name: Build APP
-        run: npm run build
+        uses: actions/checkout@v2
 
       - name: set Docker tag
         run: echo MY_TAGS=${{ github.ref  }} | sed -e "s/refs\/tags\/v//g"  >> $GITHUB_ENV
@@ -38,5 +24,4 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           snapshot: true
-          #          tag_names: true # 不支持和latest同时用?
           tags: 'latest,${{ env.MY_TAGS }}'

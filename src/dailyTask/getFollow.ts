@@ -15,7 +15,7 @@ const logger = log4js.getLogger('upTask');
 const includesFollow = DailyTask.includesFollow;
 const excludesFollow = DailyTask.excludesFollow;
 
-export default async function(page: Page): Promise<Page> {
+export default async function (page: Page): Promise<Page> {
   let upTargetPage: Page = null,
     gotoFollowPageCount = 0,
     chooseFollowTagCount = 0,
@@ -139,7 +139,9 @@ export default async function(page: Page): Promise<Page> {
       await paginationToJump(page, pageNum, logger);
       await page.util.wt(3, 6);
       //等待页面真正的渲染完成
-      await page.waitForSelector('.follow-content.section:not(.loading)');
+      await page.waitForSelector('.follow-content.section:not(.loading)', {
+        timeout: 13000,
+      });
       await page.util.wt(1, 3);
       //获取到的$$包含头像和昵称(两者都可点击)
       logger.trace(`选择第${num + 1}个`);
@@ -157,11 +159,13 @@ export default async function(page: Page): Promise<Page> {
       await page.util.wt(3, 6);
       await $target.click();
     } catch (error) {
-      if (++chooseFollowUpCount > 3) {
-        logger.fatal('前往随机up失败');
+      await page.screenshot({
+        path: '/usr/src/app/testimg',
+      });
+      logger.warn('前往随机up失败', error.message);
+      if (++chooseFollowUpCount > 2) {
         throw new Error(error);
       }
-      logger.warn('前往随机up失败', error.message);
       await page.reload();
       await chooseFollowUp();
     }

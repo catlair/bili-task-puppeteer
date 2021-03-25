@@ -39,7 +39,7 @@ export class UPTask {
   async init() {
     try {
       await this.page.util.wt(2, 4);
-      await this.goToUpByUid();
+      await this.goToUpSpace();
       const username = await this.getUserName();
       logger.info(`访问UP主 【${username}】`);
     } catch (error) {
@@ -47,7 +47,7 @@ export class UPTask {
       logger.error('前往up页面失败');
       return;
     }
-    /** 投稿 */
+    /** 稿件获取 */
     await this.page.waitForTimeout(_.random(2000, 5000));
     const nums = await this.getContributeItem();
     await this.changeContributeType(nums);
@@ -61,12 +61,12 @@ export class UPTask {
         case 0:
           //视频
           (await this.commonHandle()) &&
-          (isStopCoin = await this.videoHandle());
+            (isStopCoin = await this.videoHandle());
           break;
         case 1:
           //音频
           (await this.commonHandle()) &&
-          (isStopCoin = await this.audioHandle());
+            (isStopCoin = await this.audioHandle());
           break;
         case 2:
           //专栏
@@ -88,6 +88,10 @@ export class UPTask {
     return isStopCoin;
   }
 
+  /**
+   * 切换稿件类型(视频,音频,专栏)
+   * @param nums 每种类型的数量
+   */
   async changeContributeType(nums: number[]) {
     /** 0 - (total - 1) */
     const { value, area } = distributedRandom(nums);
@@ -110,7 +114,10 @@ export class UPTask {
     }
   }
 
-  async goToUpByUid() {
+  /**
+   * 去往用户页面
+   */
+  async goToUpSpace() {
     if (!this.uid) {
       await this.page.evaluate(() =>
         $('.n-tab-links [href*="video"]')[0].click(),
@@ -138,6 +145,10 @@ export class UPTask {
     ]);
   }
 
+  /**
+   * 获取稿件的ID
+   * @param $item 展示稿件的元素
+   */
   async getContributeId(
     $item: ElementHandle,
   ): Promise<{
@@ -267,8 +278,7 @@ export class UPTask {
         await shareVideo(this.page, logger);
         await this.page.util.wt(2, 4);
       }
-    } catch {
-    }
+    } catch {}
 
     if (!(await this.isUp())) {
       logger.debug('视频up主非指定up主,放弃投币');
@@ -309,17 +319,20 @@ export class UPTask {
     }
     const $coin = await this.page.util.$wait('.article-action .coin-btn');
     await $coin.hover();
-    await $coin.click();
-    const $coinSure = await this.page.util.$wait('.coin-sure.b-btn'),
-      $coinTipsExp = await this.page.util.$wait(
-        '.coin-content .coin-tips .exp',
-      );
-    const exp = +(await $coinTipsExp
-      .getProperty('innerText')
-      .then(jH => jH.jsonValue()));
-    return await this.addCoinSure(exp, $coinSure);
+    const [$coinSure, res] = await this.getCoinExp(
+      $coin,
+      '.coin-sure.b-btn',
+      'account/exp.php',
+    );
+    const { number } = await res.json();
+    return await this.addCoinSure(number, $coinSure);
   }
 
+  /**
+   * 确认投币
+   * @param exp 已获得经验
+   * @param $coinSure 确认投币按钮
+   */
   async addCoinSure(exp: number, $coinSure: ElementHandle): Promise<boolean> {
     await this.page.waitForTimeout(_.random(2000, 4000));
     if (exp === 40 && this.contributeType !== Contribute['专栏']) {
@@ -375,6 +388,7 @@ export class UPTask {
       return Number(multiply);
     }
     logger.warn('投币失败', code, message);
+    //137004 帐号封禁
     if (code === 137004) {
       logger.fatal(message, '结束任务执行');
       process.exit(0);
@@ -403,6 +417,9 @@ export class UPTask {
     this.coinStatus = false;
   }
 
+  /**
+   * 获取该音频已经投币状态
+   */
   async getAudioCoinStatus() {
     //音频可投币数是否可变不知
     //暂时当成2
@@ -422,8 +439,11 @@ export class UPTask {
     this.coinStatus = false;
   }
 
+  /**
+   * 获取该文章已投币状态
+   */
   async getArticleCoinStatus() {
-    //专栏可以投两颗(漏洞),当然这里一颗处理
+    //专栏可以投两颗(但是pc端只能一颗),当然这里一颗处理
     // {"code":0,"data":{like:0,coin:0,favorite:false}}}
     try {
       const res = await this.page.waitForResponse(r =>
@@ -448,7 +468,7 @@ export class UPTask {
  *
  * 使用时需要注意设置延时,避免浏览器关闭太快
  */
-export default async function(page: Page, uid?: string | number) {
+export default async function (page: Page, uid?: string | number) {
   if (!page) {
     throw new Error('不存在的页面');
   }

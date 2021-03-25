@@ -6,7 +6,7 @@
     "watchAndShare": true,
     "liveTask": false
   },
-  "excludesLiveRoom": [20165629],
+  "excludesLiveRoom": [],
   "includesLiveRoom": [],
   "includesFollow": ["特别关注"],
   "excludesFollow": [],

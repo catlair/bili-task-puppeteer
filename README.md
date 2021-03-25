@@ -4,35 +4,50 @@
 
 ## 尝鲜说明
 
-`v0.0.1`版本的配置内容十分简单, 参考`config/config.demo.json`配置`config/config.json`即可,不要填写错误(json 是不允许有注释的,前者只是参考)
-
-### Action 运行
-
-将完整 cookie 保存`github secrets`为`BILI_COOKIE`  
-参考/运行`.github/workflows/bilibili-task.yaml`
-
-### docker 运行
-
-除了基本的配置还需要单独配置 cookie,可以使用`--env`添加`BILI_COOKIE`(参考 action 运行)。或者修改 Dockerfile 进行构建(在工作目录添加一个`.env`文件`BILI-COOKIE="cookie"`)等方法
-`docker run -it --rm -v $(pwd):/usr/src/app --cap-add=SYS_ADMIN catlair/bilitaskpuppeteer node ./dist/index.js`  
-如果出现权限问题请添加`--user root`参数
-
-### 本地直接运行
-
-本地需要安装`Node.js`编译和运行,版本最好 12+  
-需要安装 chrome/chromium/chromium-edge 等`chromium`浏览器,版本最好在 79+
-配置环境变量`PUPPETEER_EXECUTABLE_PATH=浏览器可执行文件路径`  
-例如`PUPPETEER_EXECUTABLE_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
-
 ### 支持的功能
 
 **所有的模块都在 dailyTask 中,支持的功能可能只是模块的组合方式不同**
 
-- 风纪委员任务
+- 风纪委员任务(目前考虑到执行时间和周期的问题，此任务和每日任务相互排斥)
 - 给指定 uid 的 up 投币
+- 视频投币过程会播放和分享(音乐和专分享没有经验)
 - 从首页推荐选择投币
 - 给关注用户投币
-- 直播发送弹幕,headless ~~存在大量问题~~存在偶尔漏过部分的 bug
+- 直播发送弹幕,headless 存在偶尔漏过部分的 bug
+
+### 使用方式
+
+- 目前版本的配置内容十分简单, 参考`config/config.demo.json`配置`config/config.json`即可,不要填写错误(json 是不允许有注释的,前者只是参考)
+- 考虑到 action 下配置是文明, 所以所有环境的 `cookie` 采用环境变量`BILI_COOKIE=帐号cookie`的方式进行配置
+
+### Action 运行(不推荐)
+
+- **不推荐理由: 1. github 的服务器地址在国外且众所周知,容易被风控。2. action 参与非开发任务可能存在 github 帐号被限制的风险**
+
+- 配置 `config/config.json`并提交
+
+- 将完整 cookie 保存`github secrets`为`BILI_COOKIE`。参考/运行`.github/workflows/bilibili-task.yaml`
+
+### docker 运行
+
+- 开发测试中使用的 docker 环境, 由于技术有限, 用 docker 的大佬自己发挥吧。基本使用参考`.github/workflows/bilibili-task.yaml`
+
+- 配置 `config/config.json` 并挂载到 `/usr/src/app/config`目录下
+
+- 配置环境变量除了直接使用`--env`也可以挂载`.env`文件到`/usr/src/app/.env`。除了 cookie 外,更多可配置的变量参考`.env.example`
+
+- docker 内置的 chrome 用户没有特殊权限。若需要, docker 运行时添加`--cap-add=SYS_ADMIN`参数
+
+- 如有需要可以 `-v $(pwd)/logs:/usr/src/app/logs`
+
+### 本地运行
+
+- 本地需要安装`Node.js`编译和运行,版本最好 12+
+
+- 需要安装 chrome/chromium/chromium-edge 等`chromium`浏览器,版本最好在 79+
+
+- 配置环境变量`PUPPETEER_EXECUTABLE_PATH=浏览器可执行文件路径`  
+  例如`PUPPETEER_EXECUTABLE_PATH=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 
 ## 暂时无法解决的问题
 

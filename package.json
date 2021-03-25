@@ -8,7 +8,7 @@
     "start": "node --trace-warnings dist",
     "dev": "ts-node --files src/index.ts",
     "build:watch": "babel ./src --out-dir ./dist --extensions \".ts\" -w",
-    "build": "babel ./src --out-dir ./dist --extensions \".ts\" && cp -r src/lib/ dist && cp -r src/config/*.json dist/config",
+    "build": "babel ./src --out-dir ./dist --extensions \".ts\" && cp -r src/config/*.json dist/config",
     "testc": "jest --coverage"
   },
   "repository": {

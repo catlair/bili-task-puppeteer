@@ -4,10 +4,10 @@ import {
   coinByFollow,
   coinByRecommend,
   coinByUID,
-  juryTask,
   liveTask,
   watchAndShare,
 } from './dailyTask';
+import { juryTask } from './juryTask';
 import { getCookies } from './utils';
 import createBrowser from './createbBrowser';
 import * as path from 'path';
@@ -42,7 +42,7 @@ log4js.configure(path.resolve(__dirname, './config/log4js.json'));
     if (FunConfig.watchAndShare) {
       await watchAndShare(page);
     }
-    // 直播发送弹幕, headless存在大量问题;
+    // 直播发送弹幕
     if (FunConfig.liveTask) {
       await liveTask(page);
     }

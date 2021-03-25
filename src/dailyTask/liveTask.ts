@@ -41,8 +41,8 @@ class Live {
       logger.info('一共拥有勋章', this.total, '个');
       logger.info(`现在访问勋章列表第1页`);
       await this.doOnePage();
-      logger.debug(`本页执行完成,等待结束或前往下一页...`);
       for (let i = 1; i < this.totalPages; i++) {
+        logger.debug(`本页执行完成,等待结束或前往下一页...`);
         this.pageNum = i;
         await this.page.waitForTimeout(_.random(4000, 10000));
         await this.getNextPageMedal();
@@ -67,7 +67,12 @@ class Live {
   }
 
   async goNextPage() {
-    return await paginationToJump(this.page, this.pageNum, logger, 'input.jumping-input');
+    return await paginationToJump(
+      this.page,
+      this.pageNum,
+      logger,
+      'input.jumping-input',
+    );
   }
 
   async doOne() {
@@ -109,10 +114,7 @@ class Live {
     // 有待观察...
     const getMedal = async () => {
       const [res] = await Promise.race([
-        Promise.all([
-          this.getMedalResponse(),
-          this.goNextPage(),
-        ]),
+        Promise.all([this.getMedalResponse(), this.goNextPage()]),
         (async () => {
           await this.page.waitForTimeout(12000);
           return Promise.reject('超时12000ms');
@@ -152,7 +154,7 @@ class Live {
   async gotoRoom() {
     const { target_name, medalName, level, roomid } = this.fansMedalList[
       this.index
-      ];
+    ];
     logger.info(`选择${target_name}--【${medalName}】(Lv.${level})`);
     this.livePage = await this.page.browser().newPage();
     await this.livePage.goto('https://live.bilibili.com/' + roomid);
@@ -215,6 +217,6 @@ class Live {
   }
 }
 
-export default async function(page: Page) {
+export default async function (page: Page) {
   return await new Live(page).init();
 }

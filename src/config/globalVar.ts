@@ -6,7 +6,7 @@ export abstract class DailyTask {
   /**今日是否已经分享视频 */
   static share: boolean = false;
   /** 自定义up */
-  static readonly CUSTOMIZE_UP: number[] = userConfig.CUSTOMIZE_UP;
+  static readonly CUSTOMIZE_UP: number[] = userConfig.CUSTOMIZE_UP || [];
 
   static isRun: boolean = true;
 
@@ -14,20 +14,20 @@ export abstract class DailyTask {
 
   static readonly MAX_ADD_COIN_EXP = 50;
 
-  static excludesLiveRoom: number[] = userConfig.excludesLiveRoom;
+  static excludesLiveRoom: number[] = userConfig.excludesLiveRoom || [];
 
-  static includesLiveRoom: number[] = userConfig.includesLiveRoom;
+  static includesLiveRoom: number[] = userConfig.includesLiveRoom || [];
 
-  static includesFollow: string[] = userConfig.includesFollow;
+  static includesFollow: string[] = userConfig.includesFollow || [];
 
-  static excludesFollow: string[] = userConfig.excludesFollow;
+  static excludesFollow: string[] = userConfig.excludesFollow || [];
 }
 
 export abstract class OSConfig {
   /** 系统三次响应的时间戳 */
   static COOKIE: string = process.env.BILI_COOKIE;
   /**  用户id */
-  // static UserID: number = getUserId(OSConfig.COOKIE);
+  // static USER_ID: number = getUserId(OSConfig.COOKIE);
 }
 
 const funConfig = userConfig.function;

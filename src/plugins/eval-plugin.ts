@@ -7,7 +7,6 @@ import {
   WaitForSelectorOptions,
 } from 'puppeteer-core';
 import * as _ from 'lodash';
-import * as path from 'path';
 
 const { PuppeteerExtraPlugin } = require('puppeteer-extra-plugin');
 
@@ -199,7 +198,7 @@ class Util {
   /** 页面增加lodash */
   async addScriptLodash() {
     await this.page.addScriptTag({
-      path: path.resolve(__dirname, '../lib/lodash.min.js'),
+      url: 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
     });
   }
 }

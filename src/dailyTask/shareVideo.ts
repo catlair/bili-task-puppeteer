@@ -31,7 +31,7 @@ export default async function shareVideo(page: Page, logger?: Logger) {
     //随便等待的一个元素1
     await sharePage.waitForSelector('div');
     logger.info('成功分享视频');
-    DailyTask.share = true;
+    DailyTask.isShare = true;
   } catch (error) {
     logger.error('分享视频失败', error);
   } finally {

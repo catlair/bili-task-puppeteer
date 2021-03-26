@@ -13,14 +13,13 @@ async function coinByUID(page: Page) {
   if (!DailyTask.CUSTOMIZE_UP?.length) {
     return;
   }
-  let isStopCoin: boolean;
   try {
     const browser = page.browser();
-    while (!isStopCoin) {
+    while (!DailyTask.isStopCoin) {
       const uid =
         DailyTask.CUSTOMIZE_UP[_.random(DailyTask.CUSTOMIZE_UP.length - 1)];
       const page = await browser.newPage();
-      isStopCoin = await upTask(page, uid);
+      DailyTask.isStopCoin = await upTask(page, uid);
       await page.util.wt(2, 6);
     }
   } catch {}
@@ -28,18 +27,18 @@ async function coinByUID(page: Page) {
 
 async function coinByRecommend(page: Page) {
   try {
-    while (!(await videoTask(await homeVideo(page)))) {
+    while (!DailyTask.isStopCoin) {
+      DailyTask.isStopCoin = await videoTask(await homeVideo(page));
       await page.util.wt(2, 7);
     }
   } catch {}
 }
 
 async function coinByFollow(page: Page) {
+  let followPage: Page,
+    errCount = 0;
   try {
-    let followPage: Page,
-      isStopCoin: boolean,
-      errCount = 0;
-    while (!isStopCoin) {
+    while (!DailyTask.isStopCoin) {
       if (errCount > 3) {
         return;
       }
@@ -48,14 +47,14 @@ async function coinByFollow(page: Page) {
         errCount++;
         continue;
       }
-      isStopCoin = await upTask(followPage);
+      DailyTask.isStopCoin = await upTask(followPage);
       await page.util.wt(5, 10);
     }
   } catch {}
 }
 
 async function watchAndShare(page: Page, isVideoPage?: boolean) {
-  if (DailyTask.share) {
+  if (DailyTask.isShare) {
     return;
   }
   let videoPage: Page;

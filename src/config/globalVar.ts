@@ -4,7 +4,9 @@ const userConfig = require('../../config/config.json');
 //任务完成情况统计
 export abstract class DailyTask {
   /**今日是否已经分享视频 */
-  static share: boolean = false;
+  static isShare: boolean = false;
+  /** 是否停止投币 */
+  static isStopCoin: boolean = false;
   /** 自定义up */
   static readonly CUSTOMIZE_UP: number[] = userConfig.CUSTOMIZE_UP || [];
 

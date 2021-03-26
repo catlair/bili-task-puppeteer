@@ -30,13 +30,13 @@ log4js.configure(path.resolve(__dirname, './config/log4js.json'));
     if (FunConfig.coinByUID) {
       await coinByUID(page);
     }
-    //从首页推荐选择投币
-    if (FunConfig.coinByRecommend) {
-      await coinByRecommend(page);
-    }
     // 给关注用户投币;
     if (FunConfig.coinByFollow) {
       await coinByFollow(page);
+    }
+    //从首页推荐选择投币
+    if (FunConfig.coinByRecommend) {
+      await coinByRecommend(page);
     }
     // 分享;
     if (FunConfig.watchAndShare) {

@@ -10,15 +10,18 @@ import { Page } from 'puppeteer-core';
 import { DailyTask } from '../config/globalVar';
 
 async function coinByUID(page: Page) {
+  if (!DailyTask.CUSTOMIZE_UP?.length) {
+    return;
+  }
+  let isStopCoin: boolean;
   try {
-    let uid =
-      DailyTask.CUSTOMIZE_UP[_.random(DailyTask.CUSTOMIZE_UP.length - 1)];
-    if (!uid) {
-      return;
-    }
-    while (!(await upTask(page, uid))) {
-      uid = DailyTask.CUSTOMIZE_UP[_.random(DailyTask.CUSTOMIZE_UP.length - 1)];
-      await page.waitForTimeout(_.random(2000, 6000));
+    const browser = page.browser();
+    while (!isStopCoin) {
+      const uid =
+        DailyTask.CUSTOMIZE_UP[_.random(DailyTask.CUSTOMIZE_UP.length - 1)];
+      const page = await browser.newPage();
+      isStopCoin = await upTask(page, uid);
+      await page.util.wt(2, 6);
     }
   } catch {}
 }
@@ -33,34 +36,41 @@ async function coinByRecommend(page: Page) {
 
 async function coinByFollow(page: Page) {
   try {
-    let followPage: Page, isStopCoin: boolean;
+    let followPage: Page,
+      isStopCoin: boolean,
+      errCount = 0;
     while (!isStopCoin) {
-      followPage = await getFollow(page);
-      if (!followPage) {
+      if (errCount > 3) {
         return;
       }
+      followPage = await getFollow(page);
+      if (!followPage) {
+        errCount++;
+        continue;
+      }
       isStopCoin = await upTask(followPage);
-      await page.util.wt(2, 7);
+      await page.util.wt(5, 10);
     }
   } catch {}
 }
 
-async function watchAndShare(page: Page) {
+async function watchAndShare(page: Page, isVideoPage?: boolean) {
+  if (DailyTask.share) {
+    return;
+  }
   let videoPage: Page;
+  if (isVideoPage) {
+    videoPage = page;
+  }
   try {
-    if (!DailyTask.share) {
-      videoPage = await homeVideo(page);
-      await page.util.wt(3, 6);
-      await playVideo(videoPage);
-      await shareVideo(videoPage);
-    }
+    videoPage || (videoPage = await homeVideo(page));
+    await videoPage.util.wt(3, 6);
+    await playVideo(videoPage);
+    await shareVideo(videoPage);
   } catch {
   } finally {
     if (videoPage && videoPage.isClosed()) {
       videoPage.close();
-    }
-    if (page && page.isClosed()) {
-      page.close();
     }
   }
 }

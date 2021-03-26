@@ -159,9 +159,6 @@ export default async function (page: Page): Promise<Page> {
       await page.util.wt(3, 6);
       await $target.click();
     } catch (error) {
-      await page.screenshot({
-        path: '/usr/src/app/testimg',
-      });
       logger.warn('前往随机up失败', error.message);
       if (++chooseFollowUpCount > 2) {
         throw new Error(error);

@@ -266,16 +266,16 @@ export class UPTask {
     await this.page.waitForTimeout(3000);
     await playVideo(this.page, logger);
     const videoUrl = this.page.url();
-    if (!videoUrl.includes('//www.bilibili.com/video/')) {
-      logger.info('特殊视频暂不支持分享投币...');
-      logger.debug('视频链接', videoUrl);
-      return false;
+    if (videoUrl.includes('//www.bilibili.com/bangumi')) {
+      logger.debug('非普通视频, 链接:', videoUrl);
+      //处于测试中
+      return await this.bangumiHandle();
     }
     await this.page.util.wt(5, 10);
 
     try {
-      if (!DailyTask.share) {
-        await shareVideo(this.page, logger);
+      if (!DailyTask.isShare) {
+        await shareVideo(this.page, undefined, logger);
         await this.page.util.wt(2, 4);
       }
     } catch {}
@@ -326,6 +326,36 @@ export class UPTask {
     );
     const { number } = await res.json();
     return await this.addCoinSure(number, $coinSure);
+  }
+
+  /**
+   * 番剧/纪录片等特殊视频处理
+   */
+  async bangumiHandle(): Promise<boolean> {
+    try {
+      if (!DailyTask.isShare) {
+        await shareVideo(this.page, '.share-info', logger);
+        await this.page.util.wt(2, 4);
+      }
+    } catch {}
+
+    try {
+      const $coin = await this.page.util.$wait('.coin-info');
+      await this.getVideoCoinStatus($coin);
+      if (this.coinStatus) {
+        return false;
+      }
+      const [$coinSure, res] = await this.getCoinExp(
+        $coin,
+        '.coin-bottom .coin-btn',
+        '/coin/today/exp',
+      );
+      const { data } = await res.json();
+      return await this.addCoinSure(data, $coinSure);
+    } catch (error) {
+      logger.debug(error.message);
+      return false;
+    }
   }
 
   /**

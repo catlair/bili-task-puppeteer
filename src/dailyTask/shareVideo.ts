@@ -3,7 +3,17 @@ import { getLogger, Logger } from 'log4js';
 import { Page } from 'puppeteer-core';
 import * as _ from 'lodash';
 
-export default async function shareVideo(page: Page, logger?: Logger) {
+/**
+ * 分享视频
+ * @param page 视频页面
+ * @param selector 分享icon的选择器(string/undefined)
+ * @param logger
+ */
+export default async function shareVideo(
+  page: Page,
+  selector: string = '.share',
+  logger?: Logger,
+) {
   if (!logger) {
     logger = getLogger('shareVideo');
   }
@@ -12,7 +22,7 @@ export default async function shareVideo(page: Page, logger?: Logger) {
   try {
     logger.debug('开始分享视频');
     await page.waitForTimeout(_.random(2000, 5000));
-    await page.hover('.share');
+    await page.hover(selector);
     const $$btn = await page.util.$$wait('.share-btn');
     await page.waitForTimeout(_.random(1000, 3000));
     logger.debug('点击分享按钮');

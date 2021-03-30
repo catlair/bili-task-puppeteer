@@ -18,6 +18,7 @@ export async function paginationToJump(
   await page.util.scrollDown();
   const $input = await page.util.$wait(inputSelector);
   await $input.focus();
+  await page.keyboard.press('Backspace', { delay: 1000 });
   await page.keyboard.type(pageNum.toString(), { delay: 1000 });
   await page.keyboard.press('Enter', { delay: 500 });
 }

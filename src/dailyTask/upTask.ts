@@ -137,10 +137,17 @@ export class UPTask {
    * @param selector 确认投币按钮的选择器
    * @param resUrl 已获取经验的响应
    */
-  async getCoinExp($coin: ElementHandle, selector: string, resUrl: string) {
+  async getCoinExp(
+    $coin: ElementHandle,
+    selector: string,
+    resUrl: string,
+    waitResOptions?: {
+      timeout?: number;
+    },
+  ) {
     return await Promise.all([
       this.page.util.$wait(selector),
-      this.page.waitForResponse(r => r.url().includes(resUrl)),
+      this.page.waitForResponse(r => r.url().includes(resUrl), waitResOptions),
       $coin.click(),
     ]);
   }
@@ -341,19 +348,17 @@ export class UPTask {
 
     try {
       const $coin = await this.page.util.$wait('.coin-info');
-      await this.getVideoCoinStatus($coin);
-      if (this.coinStatus) {
-        return false;
-      }
       const [$coinSure, res] = await this.getCoinExp(
         $coin,
         '.coin-bottom .coin-btn',
         '/coin/today/exp',
+        { timeout: 5000 },
       );
       const { data } = await res.json();
       return await this.addCoinSure(data, $coinSure);
     } catch (error) {
       logger.debug(error.message);
+      logger.debug('可能是该视频投币已达上限');
       return false;
     }
   }

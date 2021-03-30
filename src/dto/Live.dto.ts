@@ -12,6 +12,7 @@ export class LiveSignInfoDto extends ApiAbstract {
     hadSignDays: number;
     specialText: string;
     status: 0 | 1;
+    signBonusDaysList: number[];
   };
 }
 

@@ -1,9 +1,10 @@
-import { FansMedalDto } from '../dto/Live.dto';
+import { FansMedalDto, LiveSignDto, LiveSignInfoDto } from '../dto/Live.dto';
 import * as _ from 'lodash';
 import * as log4js from 'log4js';
 import { ElementHandle, HTTPResponse, Page } from 'puppeteer-core';
 import { paginationToJump } from '../common';
 import { DailyTask } from '../config/globalVar';
+import { LiveTaskData } from './liveTaskData';
 
 type FansMedalList = FansMedalDto['data']['fansMedalList'];
 
@@ -53,6 +54,8 @@ class Live {
     } catch (error) {
       logger.error('发生异常', error);
     }
+    //此处调用是怕整个过程并没有运行签到
+    await liveSign(this.page);
   }
 
   async doOnePage() {
@@ -103,6 +106,7 @@ class Live {
       this.page.goto(
         'https://link.bilibili.com/p/center/index#/user-center/wearing-center/my-medal',
       ),
+      getLiveSignInfo(this.page),
     ]);
     const { data } = await medalPage1[0].json();
     this.fansMedalList = data.fansMedalList;
@@ -158,7 +162,6 @@ class Live {
     logger.info(`选择${target_name}--【${medalName}】(Lv.${level})`);
     this.livePage = await this.page.browser().newPage();
     await this.livePage.goto('https://live.bilibili.com/' + roomid);
-    // }
     logger.debug('成功到达页面');
   }
 
@@ -219,4 +222,57 @@ class Live {
 
 export default async function (page: Page) {
   return await new Live(page).init();
+}
+
+export async function liveSign(page: Page) {
+  if (LiveTaskData.liveSign?.status === 1) {
+    logger.info('已完成直播签到');
+    return;
+  }
+  try {
+    await page.hover(
+      '.right-part.h-100.f-right.f-clear > div.shortcuts-ctnr > div:nth-child(2)',
+    );
+    await page.util.wt(3, 6);
+    const [liveSignRes] = await Promise.all([
+      page.waitForResponse(t =>
+        t.url().includes('/xlive/web-ucenter/v1/sign/DoSign'),
+      ),
+      page.click('#live-center-app .shortcuts-ctnr .checkin-btn'),
+    ]);
+
+    const liveSign: LiveSignDto = await liveSignRes.json();
+    if (liveSign.code !== 0) {
+      logger.debug('直播签到失败', liveSign.code, liveSign.message);
+    }
+    logger.info('签到成功', liveSign.data.text, liveSign.data.specialText);
+  } catch (error) {
+    logger.debug('直播签到异常', error.message);
+  }
+}
+
+/**
+ * 获取直播签到信息
+ */
+async function getLiveSignInfo(page: Page) {
+  // 如果操作过了就不进行了
+  if (LiveTaskData.liveSign && LiveTaskData.liveSign.status === 1) {
+    return;
+  }
+  try {
+    const liveSignInfoRes = await page.waitForResponse(
+      t => t.url().includes('/xlive/web-ucenter/v1/sign/WebGetSignInfo'),
+      {
+        timeout: 8000,
+      },
+    );
+    const liveSignInfo: LiveSignInfoDto = await liveSignInfoRes.json();
+    if (liveSignInfo.code !== 0) {
+      logger.debug(liveSignInfo.code, liveSignInfo.message);
+      return;
+    }
+    LiveTaskData.liveSign = liveSignInfo.data;
+  } catch (error) {
+    logger.debug('获取签到信息异常', error.message);
+  }
 }

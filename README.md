@@ -69,6 +69,7 @@
 ## 其他已知问题
 
 - [ ] 关注的 up 列表是动态加载的, 目前存在只抓取到【全部关注】而非指定标签的情况(在延时和判断页面 loading 的情况下极小概率)
+- [ ] #1
 
 ## 一些设想
 
@@ -79,3 +80,5 @@
 
 - API 参考 [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
 - docker 参考 [Zenika/alpine-chrome](https://github.com/Zenika/alpine-chrome)
+
+注：部分参考项目为了被方便查找而就进注解

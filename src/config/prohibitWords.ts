@@ -17,3 +17,5 @@ export default [
   '父母去世',
   /([你拟妮泥尼])([吗码马])(卖)([阴淫银])/,
 ];
+
+export const juryKeywords = ['东北'];

@@ -3,7 +3,7 @@ import { Page } from 'puppeteer-core';
 import { JuryVoteOption } from '../interface/Jury';
 import * as _ from 'lodash';
 import { getLogger } from 'log4js';
-import prohibitWords from '../config/prohibitWords';
+import prohibitWords, { juryKeywords } from '../config/prohibitWords';
 import { containProhibit, jsonpToJson } from '../utils';
 
 const logger = getLogger('jury');
@@ -187,12 +187,12 @@ class Judgement {
   }
 
   makeDecision({
-                 voteDelete = 0,
-                 voteRule = 0,
-                 originContent = '',
-                 voteOpinionBlue,
-                 voteOpinionRed,
-               }: VoteDecisionOption): VoteType {
+    voteDelete = 0,
+    voteRule = 0,
+    originContent = '',
+    voteOpinionBlue,
+    voteOpinionRed,
+  }: VoteDecisionOption): VoteType {
     //瞎鸡*计算怎么投票
     let myVote: VoteType = 4;
 
@@ -211,11 +211,11 @@ class Judgement {
         if (el.vote === Vote['封禁']) {
           return true;
         }
-        const text = ['封禁', '小黑屋', '封了', '建议封', '小黑屋'];
+        const text = ['封禁', '小黑屋', '封了', '建议封', '地域黑'];
         return text.some(v => el.content.includes(v));
-
       }) || [];
     const ban = containProhibit(prohibitWords, originContent);
+    const includesKeywords = containProhibit(juryKeywords, originContent);
 
     if (ban) {
       logger.info('应该是地域黑吧?');
@@ -226,6 +226,13 @@ class Judgement {
     ) {
       //>3 还是严谨点
       logger.info('多人发布观点表示封禁');
+      myVote = Vote['封禁'];
+    } else if (
+      includesKeywords &&
+      opinionRedCount > opinionBlueCount &&
+      voteDelete > voteRule
+    ) {
+      logger.info('存在关键词且删除 > 保留');
       myVote = Vote['封禁'];
     } else if (voteDelete > 200 && voteRule < 20) {
       logger.trace('voteDelete > 200 && voteRule < 20');
@@ -311,8 +318,7 @@ class Judgement {
         { timeout: 10000 },
       );
       await $btn.click();
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   async randomEvent() {
@@ -336,6 +342,6 @@ class Judgement {
   }
 }
 
-export default async function(page: Page) {
+export default async function (page: Page) {
   return await new Judgement(page).init();
 }

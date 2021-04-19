@@ -79,7 +79,8 @@ export class UPTask {
           break;
       }
     } catch (error) {
-      logger.warn('投币出现异常', error.message);
+      //更好的观察出错
+      logger.error('投币出现异常', error);
       // 当出现异常,不管投币是否成功,都再次尝试投币
       errorCount++ < 4 && (isStopCoin = false);
     }
@@ -107,7 +108,10 @@ export class UPTask {
   }
 
   async closeUpPage() {
-    if (!this.page.isClosed()) {
+    // 避免关闭错误
+    const pageUrl = await this.page.url();
+    const includesWord = ['/video', 'bangumi', 'read/cv', 'audio/au'];
+    if (!this.page.isClosed() && includesWord.includes(pageUrl)) {
       await this.page.util.wt(2, 4);
       await this.page.close();
       logger.debug('关闭投币页面');
@@ -261,12 +265,16 @@ export class UPTask {
   }
 
   async getCoinNum() {
-    const res = await this.page.waitForResponse(
-      'https://api.bilibili.com/x/web-interface/nav',
-    );
-    this.userNav = (await res.json()).data;
-    logger.debug('剩余硬币数', this.userNav?.money);
-    return res;
+    try {
+      const res = await this.page.waitForResponse(
+        'https://api.bilibili.com/x/web-interface/nav',
+      );
+      this.userNav = (await res.json()).data;
+      logger.debug('剩余硬币数', this.userNav?.money);
+      return res;
+    } catch (error) {
+      logger.trace('获取硬币数失败', error.message);
+    }
   }
 
   async videoHandle(): Promise<boolean> {

@@ -1,10 +1,7 @@
 import { HTTPResponse, Page } from 'puppeteer-core';
 import { DailyTask } from '../config/globalVar';
-import { getLogger } from 'log4js';
 
 const { PuppeteerExtraPlugin } = require('puppeteer-extra-plugin');
-
-const logger = getLogger('getNavStatus');
 
 class EvalPlugin extends PuppeteerExtraPlugin {
   constructor(opts = {}) {
@@ -22,16 +19,15 @@ class EvalPlugin extends PuppeteerExtraPlugin {
           const { code, message } = await res.json();
           if (code !== 0) {
             DailyTask.isRun = false;
-            logger.fatal(message);
-            process.exit(0);
+            console.log(message);
+            process.exit(-1);
           }
-        } catch {
-        }
+        } catch {}
       }
     });
   }
 }
 
-module.exports = function(pluginConfig) {
+module.exports = function (pluginConfig) {
   return new EvalPlugin(pluginConfig);
 };

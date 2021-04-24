@@ -26,6 +26,8 @@ export abstract class DailyTask {
 }
 
 export abstract class OSConfig {
+  /**  浏览器UA */
+  static USER_AGENT: string = process.env.USER_AGENT || userConfig.USER_AGENT;
   /** 系统三次响应的时间戳 */
   static COOKIE: string = process.env.BILI_COOKIE;
   /**  用户id */

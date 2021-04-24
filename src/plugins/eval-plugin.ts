@@ -138,31 +138,6 @@ class Util {
     return response;
   }
 
-  async waitForReqAndRes(
-    urlOrPredicate: string | Function | RegExp,
-    options?: { timeout?: number },
-  ) {
-    let tempUrlOrPredicate: string | Function = '';
-    (function () {
-      if (typeof urlOrPredicate === 'string') {
-        if (urlOrPredicate.startsWith('http')) {
-          tempUrlOrPredicate = r => r.url().includes(urlOrPredicate);
-          return;
-        }
-      }
-
-      if (_.isRegExp(urlOrPredicate)) {
-        tempUrlOrPredicate = r => urlOrPredicate.test(r.url());
-        return;
-      }
-    })();
-
-    return await Promise.all([
-      this.page.waitForRequest(tempUrlOrPredicate, options),
-      this.page.waitForResponse(tempUrlOrPredicate, options),
-    ]);
-  }
-
   wt(min: number, max: number, unit: timeUnit);
   wt(min: number, unit: timeUnit);
   wt(min: number, max: any = 's', unit: timeUnit = 's') {

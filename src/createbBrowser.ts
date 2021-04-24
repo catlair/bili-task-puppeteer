@@ -1,15 +1,27 @@
 import puppeteer from 'puppeteer-extra';
 import { Browser } from 'puppeteer-core';
+import { OSConfig } from './config/globalVar';
 
-const blockResourcesPlugin = require('puppeteer-extra-plugin-block-resources')({
+const blockResources = require('puppeteer-extra-plugin-block-resources')({
   blockedTypes: new Set(['image', 'font']),
 });
+const stealth = require('puppeteer-extra-plugin-stealth')();
 
-puppeteer.use(require('./plugins/nav-status')());
-puppeteer.use(require('puppeteer-extra-plugin-stealth')());
-puppeteer.use(require('puppeteer-extra-plugin-anonymize-ua')());
-puppeteer.use(require('./plugins/eval-plugin')());
-puppeteer.use(blockResourcesPlugin);
+//是否自定义UA
+if (OSConfig.USER_AGENT) {
+  stealth.enabledEvasions.delete('user-agent-override');
+  puppeteer.use(
+    require('puppeteer-extra-plugin-anonymize-ua')({
+      customFn: () => OSConfig.USER_AGENT,
+    }),
+  );
+}
+
+puppeteer
+  .use(stealth)
+  .use(require('./plugins/nav-status')()) //输入哔哩哔哩专属
+  .use(require('./plugins/eval-plugin')())
+  .use(blockResources);
 
 export default async function (): Promise<Browser> {
   //@ts-ignore

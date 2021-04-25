@@ -110,8 +110,9 @@ export class UPTask {
   async closeUpPage() {
     // 避免关闭错误
     const pageUrl = await this.page.url();
-    const includesWord = ['/video', 'bangumi', 'read/cv', 'audio/au'];
-    if (!this.page.isClosed() && includesWord.includes(pageUrl)) {
+    const includesWords = ['/video', 'bangumi', 'read/cv', 'audio/au'];
+    const isIncludesWord = includesWords.some(word => pageUrl.includes(word));
+    if (!this.page.isClosed() && isIncludesWord) {
       await this.page.util.wt(2, 4);
       await this.page.close();
       logger.debug('关闭投币页面');

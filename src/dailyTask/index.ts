@@ -68,7 +68,7 @@ async function watchAndShare(page: Page, isVideoPage?: boolean) {
     await shareVideo(videoPage);
   } catch {
   } finally {
-    if (videoPage && videoPage.isClosed()) {
+    if (videoPage && !videoPage.isClosed()) {
       videoPage.close();
     }
   }

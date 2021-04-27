@@ -1,5 +1,6 @@
 require('dotenv').config();
 import { FunConfig, OSConfig } from './config/globalVar';
+import log4jsConfig from './config/log4js';
 import {
   coinByFollow,
   coinByRecommend,
@@ -10,10 +11,13 @@ import {
 import { juryTask } from './juryTask';
 import { getCookies } from './utils';
 import createBrowser from './createbBrowser';
-import * as path from 'path';
+import { resolve } from 'path';
 import * as log4js from 'log4js';
 
-log4js.configure(path.resolve(__dirname, './config/log4js.json'));
+log4js.configure(log4jsConfig);
+const logger = log4js.getLogger('home');
+const CURRENT_VERSION = require(resolve(__dirname, '../config/level.json'));
+logger.info(`当前版本【 ${CURRENT_VERSION} 】`);
 
 (async () => {
   if (process.env.BILI_TASK_JURY?.toLowerCase() === 'true') {

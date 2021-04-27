@@ -10,5 +10,6 @@
   "includesLiveRoom": [],
   "includesFollow": ["特别关注"],
   "excludesFollow": [],
-  "CUSTOMIZE_UP": []
+  "CUSTOMIZE_UP": [],
+  "USER_AGENT": ""
 }

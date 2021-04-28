@@ -18,4 +18,14 @@ export default [
   /([你拟妮泥尼])([吗码马])(卖)([阴淫银])/,
 ];
 
-export const juryKeywords = ['东北'];
+export const juryKeywords = [
+  '东北',
+  '南方',
+  '北京',
+  '上海',
+  '河南',
+  '海南',
+  '荷兰',
+  '战狼',
+  /.逼/,
+];

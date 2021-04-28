@@ -218,7 +218,7 @@ class Judgement {
     const includesKeywords = containProhibit(juryKeywords, originContent);
 
     if (ban) {
-      logger.info('应该是地域黑吧?');
+      logger.info('存在违禁词汇（大概）');
       myVote = Vote['封禁'];
     } else if (
       (opinionRedCount > 3 && banOfRed.length / opinionRedCount >= 0.8) ||

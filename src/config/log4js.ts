@@ -5,14 +5,12 @@ const levels = [
   'TRACE',
   'DEBUG',
   'INFO',
-  'WRAN',
+  'WARN',
   'ERROR',
   'FATAL',
   'OFF',
 ];
-
 const loggerLevel = levels.includes(loggerLevelENV) ? loggerLevelENV : 'INFO';
-
 const options = {
   appenders: {
     console: {

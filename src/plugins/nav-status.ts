@@ -18,9 +18,10 @@ class EvalPlugin extends PuppeteerExtraPlugin {
         try {
           const { code, message } = await res.json();
           if (code !== 0) {
+            const logger = (await import('log4js')).getLogger();
             DailyTask.isRun = false;
-            console.log(message);
-            process.exit(-1);
+            logger.fatal(message);
+            process.exit(0);
           }
         } catch {}
       }

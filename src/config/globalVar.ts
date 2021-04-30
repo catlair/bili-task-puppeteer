@@ -1,4 +1,5 @@
 require('dotenv').config();
+import { getUserId } from '../utils';
 const userConfig = require('../../config/config.json');
 
 //任务完成情况统计
@@ -31,7 +32,7 @@ export abstract class OSConfig {
   /** 系统三次响应的时间戳 */
   static COOKIE: string = process.env.BILI_COOKIE;
   /**  用户id */
-  // static USER_ID: number = getUserId(OSConfig.COOKIE);
+  static USER_ID: number = getUserId(OSConfig.COOKIE);
 }
 
 const funConfig = userConfig.function;

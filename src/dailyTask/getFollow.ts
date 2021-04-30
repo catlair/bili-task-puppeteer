@@ -8,7 +8,7 @@ import * as log4js from 'log4js';
 import { Page } from 'puppeteer-core';
 import { paginationToJump } from '../common';
 import * as _ from 'lodash';
-import { DailyTask } from '../config/globalVar';
+import { DailyTask, OSConfig } from '../config/globalVar';
 
 const logger = log4js.getLogger('upTask');
 
@@ -26,15 +26,10 @@ export default async function (page: Page): Promise<Page> {
 
   async function gotoFollowPage() {
     try {
-      await page.goto(`https://space.bilibili.com/`);
+      await page.goto(
+        `https://space.bilibili.com/${OSConfig.USER_ID}/fans/follow`,
+      );
       await page.util.wt(3, 6);
-      //避免获取列表失败
-      await Promise.all([
-        page.evaluate(() => $('.n-data:contains("关注数")')[0].click()),
-        page.waitForResponse(t =>
-          t.url().includes('//api.bilibili.com/x/relation/followings'),
-        ),
-      ]);
       logger.trace('到达关注页面');
     } catch (error) {
       if (++gotoFollowPageCount > 3) {
@@ -186,7 +181,9 @@ export default async function (page: Page): Promise<Page> {
     //判断是否已经有过该页面
     const pages = await page.browser().pages();
     const followPage = pages.filter(page =>
-      page.url().match(/\/\/space\.bilibili\.com\/\d+\/fans\/follow/),
+      page
+        .url()
+        .includes(`//space.bilibili.com/${OSConfig.USER_ID}/fans/follow`),
     )[0];
     if (!followPage) {
       await gotoFollowPage();

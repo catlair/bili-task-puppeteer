@@ -9,15 +9,13 @@ import {
   watchAndShare,
 } from './dailyTask';
 import { juryTask } from './juryTask';
-import { getCookies } from './utils';
+import { getCookies, getVersion } from './utils';
 import createBrowser from './createbBrowser';
-import { resolve } from 'path';
 import * as log4js from 'log4js';
 
 log4js.configure(log4jsConfig);
 const logger = log4js.getLogger('home');
-const CURRENT_VERSION = require(resolve(__dirname, '../config/level.json'));
-logger.info(`当前版本【 ${CURRENT_VERSION} 】`);
+logger.info(`当前版本【 ${getVersion()} 】`);
 
 (async () => {
   if (process.env.BILI_TASK_JURY?.toLowerCase() === 'true') {

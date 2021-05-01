@@ -7,12 +7,23 @@ jobs:
     runs-on: ubuntu-latest
     environment: Build
     steps:
-      - uses: actions/checkout@master
-      - name: Publish to Registry
-        uses: elgohr/Publish-Docker-Github-Action@master
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
         with:
-          name: catlair/alpine-chromium
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          dockerfile: docker/Dockerfile.alpine-chromium
-          tags: 'latest,${{ secrets.BUILD_CHROMIUM_VERSION }}'
+
+      - name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          platforms: linux/amd64,linux/arm64
+          file: docker/Dockerfile.alpine-chromium
+          tags: catlair/alpine-chromium:latest,catlair/alpine-chromium:${{ secrets.BUILD_CHROMIUM_VERSION }}

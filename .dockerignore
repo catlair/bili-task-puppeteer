@@ -10,3 +10,4 @@
 
 ## 复制config是为了设置默认值
 !config/config.json
+!config/level.json

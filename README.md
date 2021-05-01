@@ -29,7 +29,7 @@
 
 ### docker 运行
 
-- 开发测试中使用的 docker 环境, 由于技术有限, 用 docker 的大佬自己发挥吧。基本使用参考`.github/workflows/bilibili-task.yaml`
+- 开发测试中使用的 docker 环境，由于技术有限，用 docker 的大佬自己发挥吧，最基本的使用详见`docker/docker-compose.yml`文件。
 
 - 配置 `config/config.json` 并挂载到 `/usr/src/app/config`目录下
 
@@ -63,7 +63,7 @@
 ## 其他已知问题
 
 - [ ] ~~关注的 up 列表是动态加载的, 目前存在只抓取到【全部关注】而非指定标签的情况(在延时和判断页面 loading 的情况下极小概率)~~
-- [ ] #1
+- [ ] [#1](https://github.com/catlair/bili-task-puppeteer/issues/1)
 
 ## 一些设想
 

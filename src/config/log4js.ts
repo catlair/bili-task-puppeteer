@@ -14,11 +14,6 @@ const loggerLevel = levels.includes(loggerLevelENV) ? loggerLevelENV : 'INFO';
 const options = {
   appenders: {
     console: {
-      type: 'logLevelFilter',
-      level: loggerLevel,
-      appender: 'consoleCurrent',
-    },
-    consoleCurrent: {
       type: 'console',
     },
     everything: {

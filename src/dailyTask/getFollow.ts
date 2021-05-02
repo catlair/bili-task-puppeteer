@@ -5,7 +5,7 @@ import {
   paginationSelect,
 } from '../utils';
 import * as log4js from 'log4js';
-import { Page } from 'puppeteer-core';
+import { ElementHandle, Page } from 'puppeteer-core';
 import { paginationToJump } from '../common';
 import * as _ from 'lodash';
 import { DailyTask, OSConfig } from '../config/globalVar';
@@ -19,9 +19,10 @@ export default async function (page: Page): Promise<Page> {
   let upTargetPage: Page = null,
     gotoFollowPageCount = 0,
     chooseFollowTagCount = 0,
-    chooseFollowUpCount = 0,
     /** 该区域第几个up */
     upTargetValue = 0,
+    curFollowUrl: string[],
+    curTabListArea = -1,
     uid = 0;
 
   async function gotoFollowPage() {
@@ -74,7 +75,10 @@ export default async function (page: Page): Promise<Page> {
       );
       tabList = tabList.filter(el => el);
       await page.util.wt(3, 9);
-      await tabList[area].click();
+      if (curTabListArea !== area) {
+        await tabList[area].click();
+        curTabListArea = area;
+      }
       logger.debug('选择tag', tabListInfo[area].tagName);
       upTargetValue = value;
     } catch (error) {
@@ -128,6 +132,7 @@ export default async function (page: Page): Promise<Page> {
   }
 
   async function chooseFollowUp() {
+    let errorflag = false;
     try {
       const { pageNum, num } = paginationSelect(upTargetValue, 20);
       await page.util.wt(3, 6);
@@ -141,26 +146,53 @@ export default async function (page: Page): Promise<Page> {
       //获取到的$$包含头像和昵称(两者都可点击)
       logger.trace(`选择第${num + 1}个`);
       const $$ = await page.$$('.list-item a[href*="//space.bilibili.com/"]');
+      await getFollowUrlAll($$);
       const ranNum = _.random(0, 1) === 1 ? num * 2 : num * 2 + 1;
       const $target = $$[ranNum];
-      uid = await $target.evaluate(
-        (elem: HTMLElement) =>
-          +elem
-            .getAttribute('href')
-            .split('//space.bilibili.com/')[1]
-            .split('/')[0],
-        $target,
-      );
+      uid = getFollowUid(await getFollowUrl($target));
       await page.util.wt(3, 6);
       await $target.click();
     } catch (error) {
-      logger.warn('前往随机up失败', error.message);
-      if (++chooseFollowUpCount > 2) {
-        throw new Error(error);
+      errorflag = true;
+      logger.error(error.message);
+
+      logger.debug(page.url());
+      logger.debug('出现bug，截图中...');
+      await page.screenshot({
+        path: `./logs/${Date.now()}-getfollow.png`,
+      });
+
+      if (curFollowUrl && curFollowUrl.length !== 0) {
+        upTargetPage = await page.browser().newPage();
+        const ranUrl = curFollowUrl[_.random(curFollowUrl.length - 1)];
+        uid = getFollowUid(ranUrl);
+        await upTargetPage.goto(
+          ranUrl.startsWith('http') ? ranUrl : `https:${ranUrl}`,
+        );
       }
-      await page.reload();
-      await chooseFollowUp();
     }
+    if (!errorflag) {
+      await getTargetPage();
+    }
+  }
+
+  async function getFollowUrl(
+    $target: ElementHandle<Element>,
+  ): Promise<string> {
+    return await $target.evaluate(elem => elem.getAttribute('href'), $target);
+  }
+
+  function getFollowUid(followUrl: string) {
+    return +followUrl.match(/(\d+)/)?.[0];
+  }
+
+  async function getFollowUrlAll(
+    $$target: ElementHandle<Element>[],
+  ): Promise<string[]> {
+    try {
+      return (curFollowUrl = await mapAsync($$target, $t => getFollowUrl($t)));
+    } catch (error) {}
+    return [];
   }
 
   async function getTargetPage() {
@@ -192,7 +224,6 @@ export default async function (page: Page): Promise<Page> {
     }
     await chooseFollowTag();
     await chooseFollowUp();
-    await getTargetPage();
   }
 
   await run();

@@ -91,6 +91,9 @@ export class UPTask {
     }
 
     await this.closeUpPage();
+    if (isStopCoin) {
+      logger.info('剩余硬币数', this.userNav?.money);
+    }
     return isStopCoin;
   }
 
@@ -117,7 +120,7 @@ export class UPTask {
     const pageUrl = await this.page.url();
     const includesWords = ['/video', 'bangumi', 'read/cv', 'audio/au'];
     const isIncludesWord = includesWords.some(word => pageUrl.includes(word));
-    logger.info('剩余硬币数', this.userNav?.money || '未知');
+    DailyTask.money = this.userNav?.money;
     if (!this.page.isClosed() && isIncludesWord) {
       await this.page.util.wt(2, 4);
       await this.page.close();

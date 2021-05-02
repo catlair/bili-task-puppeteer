@@ -6,6 +6,8 @@
     "watchAndShare": true,
     "liveTask": false
   },
+  "coinTarget": 5,
+  "stayCoins": 0,
   "excludesLiveRoom": [],
   "includesLiveRoom": [],
   "includesFollow": ["特别关注"],

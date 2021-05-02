@@ -15,7 +15,9 @@ export abstract class DailyTask {
 
   static readonly ONE_COIN_EXP = 10;
 
-  static readonly MAX_ADD_COIN_EXP = 50;
+  static readonly MAX_ADD_COIN_NUM = userConfig.coinTarget ?? 5;
+
+  static readonly STAY_COINS = userConfig.stayCoins ?? 0;
 
   static excludesLiveRoom: number[] = userConfig.excludesLiveRoom || [];
 

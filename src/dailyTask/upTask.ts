@@ -17,7 +17,7 @@ enum Contribute {
 }
 
 const ONE_COIN_EXP = DailyTask.ONE_COIN_EXP;
-const MAX_ADD_COIN_EXP = DailyTask.MAX_ADD_COIN_EXP;
+const MAX_ADD_COIN_EXP = DailyTask.MAX_ADD_COIN_NUM * ONE_COIN_EXP;
 
 export class UPTask {
   page: Page;
@@ -50,6 +50,11 @@ export class UPTask {
     /** 稿件获取 */
     await this.page.waitForTimeout(_.random(2000, 5000));
     const nums = await this.getContributeItem();
+    if (nums.every(num => num === 0)) {
+      logger.info('没有可操作稿件');
+      await this.closeUpPage();
+      return;
+    }
     await this.changeContributeType(nums);
     await this.page.waitForTimeout(_.random(1000, 3000));
 
@@ -80,7 +85,7 @@ export class UPTask {
       }
     } catch (error) {
       //更好的观察出错
-      logger.error('投币出现异常', error);
+      logger.warn('投币出现异常', error.message);
       // 当出现异常,不管投币是否成功,都再次尝试投币
       errorCount++ < 4 && (isStopCoin = false);
     }
@@ -112,6 +117,7 @@ export class UPTask {
     const pageUrl = await this.page.url();
     const includesWords = ['/video', 'bangumi', 'read/cv', 'audio/au'];
     const isIncludesWord = includesWords.some(word => pageUrl.includes(word));
+    logger.info('剩余硬币数', this.userNav?.money || '未知');
     if (!this.page.isClosed() && isIncludesWord) {
       await this.page.util.wt(2, 4);
       await this.page.close();
@@ -260,7 +266,15 @@ export class UPTask {
       default:
         break;
     }
-    await Promise.all(runArray);
+    try {
+      await Promise.all(runArray);
+    } catch (error) {
+      logger.debug('出现bug，截图中...');
+      await this.page.screenshot({
+        path: `./logs/${Date.now()}-upTask.png`,
+      });
+      throw error;
+    }
     await this.page.waitForTimeout(2000);
     return true;
   }
@@ -388,7 +402,7 @@ export class UPTask {
       await this.page.util.wt(1, 3);
       return (await this.addCoin($coinSure)) === 1;
     }
-    if (exp >= MAX_ADD_COIN_EXP) {
+    if (exp >= MAX_ADD_COIN_EXP && this.userNav.money > DailyTask.STAY_COINS) {
       logger.info('投币数量', exp / ONE_COIN_EXP, '今日已经够了');
       return true;
     }

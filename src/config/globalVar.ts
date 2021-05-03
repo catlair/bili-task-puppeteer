@@ -19,7 +19,7 @@ export abstract class DailyTask {
 
   static readonly STAY_COINS = userConfig.stayCoins ?? 0;
 
-  static money = 0;
+  static money = 9999;
 
   static excludesLiveRoom: number[] = userConfig.excludesLiveRoom || [];
 

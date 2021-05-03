@@ -92,7 +92,7 @@ export class UPTask {
 
     await this.closeUpPage();
     if (isStopCoin) {
-      logger.info('剩余硬币数', this.userNav?.money);
+      logger.info('剩余硬币数', DailyTask.money);
     }
     return isStopCoin;
   }
@@ -120,7 +120,6 @@ export class UPTask {
     const pageUrl = await this.page.url();
     const includesWords = ['/video', 'bangumi', 'read/cv', 'audio/au'];
     const isIncludesWord = includesWords.some(word => pageUrl.includes(word));
-    DailyTask.money = this.userNav?.money;
     if (!this.page.isClosed() && isIncludesWord) {
       await this.page.util.wt(2, 4);
       await this.page.close();
@@ -238,7 +237,7 @@ export class UPTask {
     pageSize: number = 30,
     itemSelector: string = '.section .small-item',
   ) {
-    if (this.userNav?.money ?? this.userNav?.money < 1) {
+    if (DailyTask.money < 1) {
       return false;
     }
     await this.page.waitForTimeout(_.random(4000, 8000));
@@ -288,7 +287,8 @@ export class UPTask {
         'https://api.bilibili.com/x/web-interface/nav',
       );
       this.userNav = (await res.json()).data;
-      logger.debug('剩余硬币数', this.userNav?.money);
+      DailyTask.money = this.userNav?.money;
+      logger.debug('剩余硬币数', DailyTask.money);
       return res;
     } catch (error) {
       logger.trace('获取硬币数失败', error.message);
@@ -405,7 +405,7 @@ export class UPTask {
       await this.page.util.wt(1, 3);
       return (await this.addCoin($coinSure)) === 1;
     }
-    if (exp >= MAX_ADD_COIN_EXP && this.userNav.money > DailyTask.STAY_COINS) {
+    if (exp >= MAX_ADD_COIN_EXP && DailyTask.money > DailyTask.STAY_COINS) {
       logger.info('投币数量', exp / ONE_COIN_EXP, '今日已经够了');
       return true;
     }
@@ -446,6 +446,7 @@ export class UPTask {
     const { code, message } = await coinRes.json();
     if (code === 0) {
       logger.info('成功投币', multiply, '颗');
+      DailyTask.money -= Number(multiply);
       return Number(multiply);
     }
     logger.warn('投币失败', code, message);

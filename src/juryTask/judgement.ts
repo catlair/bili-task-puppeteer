@@ -307,8 +307,12 @@ class Judgement {
   }
 
   async submitHandle() {
-    await this.page.click('.content-outer .footer button');
-    logger.info('成功提交');
+    try {
+      await this.page.click('.content-outer .footer button');
+      logger.debug('成功提交');
+    } catch (error) {
+      logger.info(error.message);
+    }
   }
 
   async closeSummary() {

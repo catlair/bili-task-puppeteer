@@ -271,9 +271,11 @@ export class UPTask {
     try {
       await Promise.all(runArray);
     } catch (error) {
-      logger.debug('出现bug，截图中...');
+      logger.error(error.message);
+      const curTime = Date.now();
+      logger.debug('出现bug，截图中...', curTime);
       await this.page.screenshot({
-        path: `./logs/${Date.now()}-upTask.png`,
+        path: `./logs/${curTime}-upTask.png`,
       });
       throw error;
     }

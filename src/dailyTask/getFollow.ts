@@ -156,10 +156,11 @@ export default async function (page: Page): Promise<Page> {
       errorflag = true;
       logger.error(error.message);
 
+      const curTime = Date.now();
       logger.debug(page.url());
-      logger.debug('出现bug，截图中...');
+      logger.debug('出现bug，截图中...', curTime);
       await page.screenshot({
-        path: `./logs/${Date.now()}-getfollow.png`,
+        path: `./logs/${curTime}-getfollow.png`,
       });
 
       if (curFollowUrl && curFollowUrl.length !== 0) {

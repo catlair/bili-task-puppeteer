@@ -9,6 +9,9 @@ ENTRYPOINT ["tini", "--"]
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1 \
      PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
+# 国内将第一行换成这两行
+# RUN npm config set registry https://registry.npm.taobao.org \
+     # chown -R chrome ./ \
 RUN chown -R chrome ./ \
      && cd ./builddir/ \
      && npm cache clean -f \

@@ -256,7 +256,9 @@ export class UPTask {
     const runArray: any = [
       this.getCoinNum(),
       this.page.waitForNavigation(),
-      $$item[num].click(),
+      this.contributeType === 0
+        ? $$item[num].$eval('a', (a: HTMLAnchorElement) => a.click())
+        : $$item[num].click(),
     ];
     switch (this.contributeType) {
       case 1:

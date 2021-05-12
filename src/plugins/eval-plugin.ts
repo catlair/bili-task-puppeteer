@@ -172,9 +172,16 @@ class Util {
 
   /** 页面增加lodash */
   async addScriptLodash() {
-    await this.page.addScriptTag({
-      url: 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
-    });
+    try {
+      await this.page.addScriptTag({
+        url: 'https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js',
+      });
+    } catch {
+      await this.page.addScriptTag({
+        url:
+          'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
+      });
+    }
   }
 }
 

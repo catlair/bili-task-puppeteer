@@ -15,29 +15,10 @@ jobs:
       - name: set Docker tag
         run: echo MY_TAGS=${{ github.ref  }} | sed -e "s/refs\/tags\/v//g"  >> $GITHUB_ENV
 
-      # 这会加快编译速度，但也会增加镜像大小
-      # - name: Preparation
-      #   run: |
-      #     echo '!node_modules' >> .dockerignore
-      #     echo '!dist' >> .dockerignore
-      #     sed -i '14,18d' Dockerfile
-      #     echo '"${{ env.MY_TAGS }}"' > src/config/level.json
-
       # 用上面的不用这
       - name: Preparation
         run: |
           echo '"${{ env.MY_TAGS }}"' > src/config/level.json
-
-      # - name: Use Node.js 14.x
-      #   uses: actions/setup-node@v2
-      #   with:
-      #     node-version: 14.x
-
-      # - name: install and build
-      #   run: |
-      #     npm install
-      #     npm run build
-      #     npm prune --production
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
@@ -57,5 +38,5 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ secrets.DOCKER_PLATFORMS || 'linux/amd64,linux/arm64' }}
           tags: catlair/bilitaskpuppeteer:latest,catlair/bilitaskpuppeteer:${{ env.MY_TAGS }}

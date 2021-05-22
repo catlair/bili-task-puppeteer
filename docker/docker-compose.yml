@@ -3,11 +3,11 @@ services:
   bili_task:
     image: catlair/bilitaskpuppeteer:latest
     container_name: catlair_bili_task
-    volumes:
+    volumes: # 请注意路径是否正确
       - ../config/:/usr/src/app/config/
       - ../logs/:/usr/src/app/logs/
     tty: true
-    env_file: ../.env
+    env_file: ../.env # 请注意路径是否正确
     user: root
     cap_add:
       - SYS_ADMIN

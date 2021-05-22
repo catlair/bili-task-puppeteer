@@ -1,0 +1,2 @@
+0 8 * * * /root/workspace/bili_task_jury/random_run.sh 1 2 7200 > ~/workspace/bili_task_jury/logs/cron.log  2>&1
+0 20 * * * /root/workspace/bili_task_jury/random_run.sh 0 2 10800 > ~/workspace/bili_task_jury/logs/cron.log  2>&1

@@ -4,7 +4,7 @@
 
 ## 说用说明
 
-[获取 Docker 镜像](https://registry.hub.docker.com/repository/docker/catlair/bilitaskpuppeteer)
+[获取 Docker 镜像](https://registry.hub.docker.com/repository/docker/catlair/bilitaskpuppeteer) `catlair/bilitaskpuppeteer:latest`
 
 ### 支持的功能
 
@@ -27,7 +27,7 @@
 
 ### Docker 运行
 
-- 开发测试中使用的 Docker 环境，由于技术有限，用 Docker 的大佬自己发挥吧，最基本的使用详见 `docker/Docker-compose.yml` 文件。
+- 开发测试中使用的 Docker 环境，由于技术有限，用 Docker 的大佬自己发挥吧，最基本的使用详见 `docker/docker-compose.yml` 文件。
 - 配置 `crontab` 参考 <https://github.com/catlair/bili-task-puppeteer/tree/main/tools>
 
 ### 本地运行
@@ -42,6 +42,7 @@
 ## 暂时无法解决的问题
 
 - 偶发性问题很多（QvQ）
+- 不使用 `puppeteer` 安装 `chromium` 是因为访问b站视频存在问题
 
 ## 被忽略的问题
 

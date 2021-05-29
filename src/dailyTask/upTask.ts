@@ -169,9 +169,7 @@ export class UPTask {
    * 获取稿件的ID
    * @param $item 展示稿件的元素
    */
-  async getContributeId(
-    $item: ElementHandle,
-  ): Promise<{
+  async getContributeId($item: ElementHandle): Promise<{
     title: string;
     id: string;
   }> {
@@ -399,8 +397,15 @@ export class UPTask {
    * @param $coinSure 确认投币按钮
    */
   async addCoinSure(exp: number, $coinSure: ElementHandle): Promise<boolean> {
+    if (DailyTask.money <= DailyTask.STAY_COINS || DailyTask.money < 1) {
+      logger.info('到达保留硬币界限：', DailyTask.STAY_COINS);
+      return true;
+    }
     await this.page.waitForTimeout(_.random(2000, 4000));
-    if (exp === 40 && this.contributeType !== Contribute['专栏']) {
+    if (
+      parseInt(DailyTask.money?.toString()) < 1 ||
+      (exp === 40 && this.contributeType !== Contribute['专栏'])
+    ) {
       logger.debug('还需要投一枚硬币');
       await this.page.evaluate(() => {
         const box = $(':contains("1硬币")');

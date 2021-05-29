@@ -27,7 +27,7 @@
 
 ### Docker 运行
 
-- 开发测试中使用的 Docker 环境，由于技术有限，用 Docker 的大佬自己发挥吧，最基本的使用详见 `docker/docker-compose.yml` 文件。
+- 开发测试中使用的 Docker 环境，由于技术有限，用 Docker 的大佬自己发挥吧，最基本的使用详见 `docker-compose.yml` 文件。
 - 配置 `crontab` 参考 <https://github.com/catlair/bili-task-puppeteer/tree/main/tools>
 
 ### 本地运行

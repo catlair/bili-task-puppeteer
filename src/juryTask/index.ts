@@ -21,6 +21,7 @@ export async function juryTask() {
     process.removeAllListeners();
     const temp = _.random(300000, 700000);
     if (isRun === 0) {
+      logger.info('今日任务完成');
       break;
     }
     logger.info(`等待${_.floor(_.divide(temp, 60000), 2)}分重启`);

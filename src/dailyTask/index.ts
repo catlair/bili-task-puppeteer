@@ -8,6 +8,7 @@ import videoTask from './videoTask';
 import * as _ from 'lodash';
 import { Page } from 'puppeteer-core';
 import { DailyTask } from '../config/globalVar';
+export * from './user';
 
 async function coinByUID(page: Page) {
   if (!DailyTask.CUSTOMIZE_UP?.length) {

@@ -5,6 +5,7 @@ import {
   coinByFollow,
   coinByRecommend,
   coinByUID,
+  getUser,
   liveTask,
   watchAndShare,
 } from './dailyTask';
@@ -25,9 +26,12 @@ logger.info(`当前版本【 ${getVersion()} 】`);
   }
 
   const browser = await createBrowser();
-  let page = await browser.newPage();
+  const page = await browser.newPage();
   try {
     await page.setCookie(...getCookies(OSConfig.COOKIE, '.bilibili.com'));
+    // 基本信息
+    await getUser(page, logger);
+
     //给指定uid的up投币
     if (FunConfig.coinByUID) {
       await coinByUID(page);

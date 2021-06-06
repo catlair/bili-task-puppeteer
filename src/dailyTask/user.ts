@@ -14,13 +14,12 @@ export async function getUser(page: Page, logger: Logger) {
       return;
     }
     DailyTask.money = userNav?.money;
-    logger.debug(`
+    logger.info(`
         当前等级：${userNav.level_info.current_level}
         距离升级还需要经验：${
           userNav.level_info.next_exp - userNav.level_info.current_exp
         }
-        剩余硬币数：${userNav.money}
-      `);
+        剩余硬币数：${userNav.money}`);
     return res;
   }
 

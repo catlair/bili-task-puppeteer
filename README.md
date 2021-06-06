@@ -42,7 +42,7 @@
 ## 暂时无法解决的问题
 
 - 偶发性问题很多（QvQ）
-- 不使用 `puppeteer` 安装 `chromium` 是因为访问b站视频存在问题
+- 不使用 `puppeteer` 安装 `chromium` 是因为访问 b 站视频存在问题
 
 ## 被忽略的问题
 
@@ -58,8 +58,8 @@
 
 ## 一些设想
 
-- 试图拦截 request 直接修改某些请求，实际上 puppeteer 不支持串行的拦截，导致此行为和第三方的包有所冲突
-  <https://github.com/puppeteer/puppeteer/pull/6735>
+1. 试图拦截 request 直接修改某些请求，实际上 puppeteer 不支持串行的拦截，导致此行为和第三方的包有所冲突
+   <https://github.com/puppeteer/puppeteer/pull/6735> `puppeteer@10.0.0` 删除了相关 flag <https://github.com/puppeteer/puppeteer/releases/tag/v10.0.0>
 
 ## 责任声明
 

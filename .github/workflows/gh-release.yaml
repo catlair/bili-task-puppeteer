@@ -24,7 +24,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: set Docker tag
         run: echo MY_TAGS=${{ github.ref  }} | sed -e "s/refs\/tags\/v//g"  >> $GITHUB_ENV
-      # 用上面的不用这
       - name: Preparation
         run: |
           echo '"${{ env.MY_TAGS }}"' > src/config/level.json

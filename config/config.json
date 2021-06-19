@@ -6,12 +6,14 @@
     "watchAndShare": true,
     "liveTask": false
   },
+  "cookie": "环境变量优先",
   "coinTarget": 5,
+  "targetLevel": 6,
   "stayCoins": 0,
   "excludesLiveRoom": [],
   "includesLiveRoom": [],
   "includesFollow": ["特别关注"],
   "excludesFollow": [],
-  "CUSTOMIZE_UP": [],
-  "USER_AGENT": ""
+  "customizeUp": [],
+  "userAgent": ""
 }

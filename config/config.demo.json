@@ -12,8 +12,12 @@
     // 发送直播弹幕
     "liveTask": false
   },
+  // 账户cookie，环境变量中设置了则忽略此处
+  "cookie": "",
   // 投币数量，理论最大为5
   "coinTarget": 5,
+  // 投币目标等级 （默认6级）
+  "targetLevel": 6,
   // 保留硬币数
   "stayCoins": 0,
   // 发送弹幕排除的直播间, 与下面的排除列表冲突, 同时出现时包含列表优先
@@ -25,7 +29,7 @@
   // 关注列表中排除的列表
   "excludesFollow": [],
   // 自定义的up列表, 不推荐使用, 可以将喜欢的up加入一个分组,然后添加进上面的includesFollow
-  "CUSTOMIZE_UP": [],
+  "customizeUp": [],
   // 自定义浏览器UA，请不要填写不符合格式的UA（不配置则在浏览器的基础上配置为window平台）
-  "USER_AGENT": ""
+  "userAgent": ""
 }

@@ -13,13 +13,20 @@ export async function getUser(page: Page, logger: Logger) {
     if (!userNav.isLogin) {
       return;
     }
-    DailyTask.money = userNav?.money;
+    const {
+      money,
+      level_info: { current_level, next_exp, current_exp },
+    } = userNav;
+
+    DailyTask.money = money;
+    DailyTask.isStopCoin = current_level >= DailyTask.TARGET_LEVEL;
+
     logger.info(`
-        当前等级：${userNav.level_info.current_level}
-        距离升级还需要经验：${
-          userNav.level_info.next_exp - userNav.level_info.current_exp
-        }
-        剩余硬币数：${userNav.money}`);
+        当前等级：${current_level} ${
+      DailyTask.isStopCoin ? '[达到目标等级]' : ''
+    }
+        距离升级还需要经验：${next_exp - current_exp}
+        剩余硬币数：${money}`);
     return res;
   }
 

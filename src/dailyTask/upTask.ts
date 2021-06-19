@@ -178,18 +178,18 @@ export class UPTask {
         case 0:
           return $item.evaluate($li => ({
             id: $li.getAttribute('data-aid'),
-            title: $li.querySelector('.title').title,
+            title: $li.querySelector<HTMLAnchorElement>('.title').title,
           }));
         case 1:
           return await $item.evaluate($li => {
-            const $title = $li.querySelector('.title');
+            const $title = $li.querySelector<HTMLAnchorElement>('.title');
             return {
               title: $title.title,
               id: $title.href.match(/\/([0-9A-Za-z]+)(?:$|\?)/)?.[1] || '未知',
             };
           });
         case 2:
-          return $item.evaluate($li => ({
+          return $item.evaluate(($li: HTMLAnchorElement) => ({
             id: $li.href.match(/\/([0-9A-Za-z]+)(?:$|\?)/)?.[1] || '未知',
             title: $li.title,
           }));
@@ -416,6 +416,10 @@ export class UPTask {
     }
     if (exp >= MAX_ADD_COIN_EXP && DailyTask.money > DailyTask.STAY_COINS) {
       logger.info('投币数量', exp / ONE_COIN_EXP, '今日已经够了');
+      return true;
+    }
+    if (DailyTask.isStopCoin) {
+      logger.info('因为某种原因(等级，硬币数)不需要/不能再投币');
       return true;
     }
     const coinNum = await this.addCoin($coinSure);

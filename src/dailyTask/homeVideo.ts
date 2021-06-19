@@ -34,10 +34,8 @@ class HomeVideo {
 
   async getRecommendVideoCard() {
     const $$ = await this.page.$$('.rcmd-box-wrap .rcmd-box .info-box img');
-    //只有前6个是需要的
-    logger.trace('获取到的视频长度', $$.length);
     $$.length = 6;
-    //长度减1
+    // 5是长度减1
     return $$[_.random(5)];
   }
 
@@ -55,7 +53,7 @@ class HomeVideo {
     const $video = await this.getRecommendVideoCard();
     await this.page.util.wt(2, 5);
     logger.trace('点击视频');
-    await $video.evaluate(node => node.click());
+    await $video.evaluate((node: HTMLElement) => node.click());
   }
 }
 

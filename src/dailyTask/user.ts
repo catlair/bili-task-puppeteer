@@ -25,7 +25,11 @@ export async function getUser(page: Page, logger: Logger) {
         当前等级：${current_level} ${
       DailyTask.isStopCoin ? '[达到目标等级]' : ''
     }
-        距离升级还需要经验：${next_exp - current_exp}
+        距离升级还需要经验：${
+          <string | number>next_exp === '--'
+            ? '0 [以达最高等级]'
+            : next_exp - current_exp
+        }
         剩余硬币数：${money}`);
     return res;
   }

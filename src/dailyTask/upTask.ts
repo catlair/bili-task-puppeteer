@@ -269,6 +269,7 @@ export class UPTask {
     }
     try {
       await Promise.all(runArray);
+      logger.debug('剩余硬币数', DailyTask.money);
     } catch (error) {
       logger.error(error.message);
       const curTime = Date.now();
@@ -388,7 +389,7 @@ export class UPTask {
     }
     await this.page.waitForTimeout(_.random(2000, 4000));
     if (
-      parseInt(DailyTask.money?.toString()) < 1 ||
+      parseInt(DailyTask.money?.toString()) === 1 ||
       (exp === 40 && this.contributeType !== Contribute['专栏'])
     ) {
       logger.debug('还需要投一枚硬币');

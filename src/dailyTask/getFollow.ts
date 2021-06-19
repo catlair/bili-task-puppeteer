@@ -139,9 +139,7 @@ export default async function (page: Page): Promise<Page> {
       await paginationToJump(page, pageNum, logger);
       await page.util.wt(3, 6);
       //等待页面真正的渲染完成
-      await page.waitForSelector('.follow-content.section:not(.loading)', {
-        timeout: 13000,
-      });
+      await page.waitForSelector('.follow-content.section:not(.loading)');
       await page.util.wt(1, 3);
       //获取到的$$包含头像和昵称(两者都可点击)
       logger.trace(`选择第${num + 1}个`);

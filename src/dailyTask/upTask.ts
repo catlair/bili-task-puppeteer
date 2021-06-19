@@ -252,7 +252,6 @@ export class UPTask {
     //只在本页操作
     await this.page.util.removeTarget();
     const runArray: any = [
-      this.getCoinNum(),
       this.page.waitForNavigation(),
       this.contributeType === 0
         ? $$item[num].$eval('a', (a: HTMLAnchorElement) => a.click())
@@ -281,20 +280,6 @@ export class UPTask {
     }
     await this.page.waitForTimeout(2000);
     return true;
-  }
-
-  async getCoinNum() {
-    try {
-      const res = await this.page.waitForResponse(
-        'https://api.bilibili.com/x/web-interface/nav',
-      );
-      this.userNav = (await res.json()).data;
-      DailyTask.money = this.userNav?.money;
-      logger.debug('剩余硬币数', DailyTask.money);
-      return res;
-    } catch (error) {
-      logger.trace('获取硬币数失败', error.message);
-    }
   }
 
   async videoHandle(): Promise<boolean> {

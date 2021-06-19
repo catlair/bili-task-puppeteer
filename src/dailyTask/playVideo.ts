@@ -22,6 +22,6 @@ export default async function playVideo(page: Page, logger?: Logger) {
     const $video = await page.$('video');
     await $video.click();
   } catch (e) {
-    logger.error('环境不支持点击视频', e);
+    logger.error('环境不支持点击视频', e.message);
   }
 }

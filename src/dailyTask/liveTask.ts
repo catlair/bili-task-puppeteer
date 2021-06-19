@@ -52,7 +52,7 @@ class Live {
       }
       logger.info('所有直播弹幕发送成功');
     } catch (error) {
-      logger.error('发生异常', error);
+      logger.error('发生异常', error.message);
     }
     //此处调用是怕整个过程并没有运行签到
     await liveSign(this.page);
@@ -89,7 +89,7 @@ class Live {
       await this.closeLiveRoom();
     } catch (error) {
       const { target_name, medalName } = this.fansMedalList[this.index];
-      logger.warn('发送弹幕时出错', target_name, medalName, error);
+      logger.warn('发送弹幕时出错', target_name, medalName, error.message);
     }
   }
 
@@ -130,7 +130,7 @@ class Live {
     try {
       await getMedal();
     } catch (error) {
-      logger.debug('获取下一页出现错误', error);
+      logger.debug('获取下一页出现错误', error.message);
       await getMedal();
     }
   }

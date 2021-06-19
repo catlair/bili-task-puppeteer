@@ -43,7 +43,7 @@ export default async function shareVideo(
     logger.info('成功分享视频');
     DailyTask.isShare = true;
   } catch (error) {
-    logger.error('分享视频失败', error);
+    logger.error('分享视频失败', error.message);
   } finally {
     if (!sharePage.isClosed()) {
       await sharePage.close();

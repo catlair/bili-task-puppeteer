@@ -6,7 +6,7 @@
   "scripts": {
     "test": "jest",
     "start": "node --trace-warnings dist",
-    "dev": "ts-node --files src/index.ts",
+    "dev": "ts-node --files src/bin.ts",
     "build:watch": "babel ./src --out-dir ./dist --extensions \".ts\" -w",
     "build": "babel ./src --out-dir ./dist --extensions \".ts\" && cp -r src/config/*.json dist/config",
     "testc": "jest --coverage"

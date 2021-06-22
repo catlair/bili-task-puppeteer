@@ -18,6 +18,22 @@ log4js.configure(log4jsConfig);
 const logger = log4js.getLogger('home');
 logger.info(`当前版本【 ${getVersion()} 】`);
 
+/**
+ * 暂时的超时逻辑，程序中每次页面暂停都保留 ‘下次继续运行时间’（当前时间+暂停时间）
+ * 每 30s 检测一下 当前时间是否大于 ‘下次继续运行时间’ + 60s，大于则可能是页面长时间没有响应
+ * +60s 是因为可能部分操作需要消耗时间（比如等元素出现的时间默认是 30s ）
+ */
+const OS_TIMEOUT_TIME = 60000;
+process.env.__NEXT_RESPONSE_TIME = '' + (Date.now() + 60000);
+setInterval(() => {
+  const time = +process.env.__NEXT_RESPONSE_TIME + OS_TIMEOUT_TIME;
+  if (time < Date.now()) {
+    logger.fatal('系统长时间没有响应');
+    process.send('restart');
+    process.exit();
+  }
+}, 30000);
+
 (async () => {
   if (process.env.BILI_TASK_JURY?.toLowerCase() === 'true') {
     //风纪委员任务
@@ -55,5 +71,7 @@ logger.info(`当前版本【 ${getVersion()} 】`);
   } finally {
     await page.util.wt(3, 6);
     await browser.close();
+    // 避免浏览器关闭却没有关闭进程
+    process.exit();
   }
 })();

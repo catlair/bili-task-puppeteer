@@ -160,11 +160,20 @@ class Util {
     }
     const ran = async () => {
       if (typeof max === 'string') {
-        await this.page.waitForTimeout(min * baseTime);
+        const waitTime = min * baseTime;
+        // 保存下次响应时间
+        process.env.__NEXT_RESPONSE_TIME = (
+          new Date().getTime() + waitTime
+        ).toString();
+
+        await this.page.waitForTimeout(waitTime);
       } else {
-        await this.page.waitForTimeout(
-          _.random(min * baseTime, max * baseTime),
-        );
+        const waitTime = _.random(min * baseTime, max * baseTime);
+        process.env.__NEXT_RESPONSE_TIME = (
+          new Date().getTime() + waitTime
+        ).toString();
+
+        await this.page.waitForTimeout(waitTime);
       }
     };
     return ran();
@@ -178,8 +187,7 @@ class Util {
       });
     } catch {
       await this.page.addScriptTag({
-        url:
-          'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
+        url: 'https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js',
       });
     }
   }

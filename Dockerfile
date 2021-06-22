@@ -25,4 +25,4 @@ RUN chown -R chrome ./ \
      && cd ../ \
      && rm -rf builddir
 
-CMD ["node", "dist/index.js" ]
+CMD ["node", "dist/bin.js" ]

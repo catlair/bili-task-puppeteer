@@ -2,7 +2,7 @@
   "function": {
     "coinByUID": false,
     "coinByRecommend": false,
-    "coinByFollow": true,
+    "coinByFollow": false,
     "watchAndShare": true,
     "liveTask": false
   },

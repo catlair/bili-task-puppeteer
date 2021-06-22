@@ -45,7 +45,7 @@ class Live {
       for (let i = 1; i < this.totalPages; i++) {
         logger.debug(`本页执行完成,等待结束或前往下一页...`);
         this.pageNum = i;
-        await this.page.waitForTimeout(_.random(4000, 10000));
+        await this.page.util.wt(4, 10);
         await this.getNextPageMedal();
         logger.info(`现在访问勋章列表第${i + 1}页`);
         await this.doOnePage();
@@ -80,12 +80,12 @@ class Live {
 
   async doOne() {
     try {
-      await this.page.waitForTimeout(_.random(4000, 10000));
+      await this.page.util.wt(4, 10);
       await this.gotoRoom();
-      await this.livePage.waitForTimeout(_.random(4000, 10000));
+      await this.livePage.util.wt(4, 10);
       await this.sendMessage();
       this.count++;
-      await this.page.waitForTimeout(_.random(4000, 10000));
+      await this.page.util.wt(4, 10);
       await this.closeLiveRoom();
     } catch (error) {
       const { target_name, medalName } = this.fansMedalList[this.index];
@@ -120,7 +120,7 @@ class Live {
       const [res] = await Promise.race([
         Promise.all([this.getMedalResponse(), this.goNextPage()]),
         (async () => {
-          await this.page.waitForTimeout(12000);
+          await this.page.util.wt(12);
           return Promise.reject('超时12000ms');
         })(),
       ]);
@@ -156,9 +156,8 @@ class Live {
 
   /** 前往直播间 */
   async gotoRoom() {
-    const { target_name, medalName, level, roomid } = this.fansMedalList[
-      this.index
-    ];
+    const { target_name, medalName, level, roomid } =
+      this.fansMedalList[this.index];
     logger.info(`选择${target_name}--【${medalName}】(Lv.${level})`);
     this.livePage = await this.page.browser().newPage();
     await this.livePage.goto('https://live.bilibili.com/' + roomid);
@@ -173,7 +172,7 @@ class Live {
 
     const $textarea = await Promise.race([
       this.livePage.util.$wait(selector),
-      this.livePage.waitForTimeout(12000),
+      this.livePage.util.wt(12),
     ]);
     if (!$textarea) {
       logger.debug('直播间可能不允许评论或者是活动直播间');
@@ -187,7 +186,7 @@ class Live {
       await this.livePage.util.scroll(800);
       const $textarea = await Promise.race([
         Promise.all([frame?.$(selector), frame.waitForSelector(selector)]),
-        this.page.waitForTimeout(12000),
+        this.page.util.wt(12),
       ]);
       $text = $textarea?.[0];
       if (!$text) {

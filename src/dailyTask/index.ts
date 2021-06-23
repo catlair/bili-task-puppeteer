@@ -62,14 +62,18 @@ async function watchAndShare(page: Page, isVideoPage?: boolean) {
   if (isVideoPage) {
     videoPage = page;
   }
+  let count = 0;
   try {
-    videoPage || (videoPage = await homeVideo(page));
-    await videoPage.util.wt(3, 6);
-    await playVideo(videoPage);
-    await shareVideo(videoPage);
+    while (!DailyTask.isShare && count < 4) {
+      videoPage ||= await homeVideo(page);
+      await videoPage.util.wt(3, 6);
+      await playVideo(videoPage);
+      await shareVideo(videoPage);
+      count++;
+    }
   } catch {
   } finally {
-    if (videoPage && !videoPage.isClosed()) {
+    if (videoPage?.isClosed && !videoPage.isClosed()) {
       videoPage.close();
     }
   }

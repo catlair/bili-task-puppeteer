@@ -12,10 +12,10 @@ import {
 import { juryTask } from './juryTask';
 import { getCookies, getVersion } from './utils';
 import createBrowser from './createbBrowser';
-import * as log4js from 'log4js';
+import { getLogger, configure } from 'log4js';
 
-log4js.configure(log4jsConfig);
-const logger = log4js.getLogger('home');
+configure(log4jsConfig);
+const logger = getLogger('home');
 logger.info(`当前版本【 ${getVersion()} 】`);
 
 /**
@@ -26,10 +26,11 @@ logger.info(`当前版本【 ${getVersion()} 】`);
 const OS_TIMEOUT_TIME = 60000;
 process.env.__NEXT_RESPONSE_TIME = '' + (Date.now() + 60000);
 setInterval(() => {
+  logger;
   const time = +process.env.__NEXT_RESPONSE_TIME + OS_TIMEOUT_TIME;
   if (time < Date.now()) {
     logger.fatal('系统长时间没有响应');
-    process.send('restart');
+    process?.send('restart');
     process.exit();
   }
 }, 30000);
@@ -50,22 +51,27 @@ setInterval(() => {
 
     //给指定uid的up投币
     if (FunConfig.coinByUID) {
+      logger.trace('为指定UID投币');
       await coinByUID(page);
     }
     // 给关注用户投币;
     if (FunConfig.coinByFollow) {
+      logger.trace('为关注列表投币');
       await coinByFollow(page);
     }
     //从首页推荐选择投币
     if (FunConfig.coinByRecommend) {
+      logger.trace('为推荐列表投币');
       await coinByRecommend(page);
     }
     // 分享;
     if (FunConfig.watchAndShare) {
+      logger.trace('播放/分享视频');
       await watchAndShare(page);
     }
     // 直播发送弹幕
     if (FunConfig.liveTask) {
+      logger.trace('发送直播弹幕/直播签到');
       await liveTask(page);
     }
   } finally {

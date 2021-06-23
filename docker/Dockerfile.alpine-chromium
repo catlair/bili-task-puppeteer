@@ -20,7 +20,7 @@ RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" > /etc/apk/repositorie
     wqy-zenhei \
     tini \
     nodejs \
-    nodejs-npm \
+    npm \
     && rm -rf /etc/localtime \
     && ln -s /usr/share/zoneinfo/Asia/Shanghai /etc/localtime  \
     && rm -rf /var/cache/* \

@@ -21,10 +21,10 @@ export default async function shareVideo(
 
   try {
     logger.debug('开始分享视频');
-    await page.waitForTimeout(_.random(2000, 5000));
+    await page.util.wt(2, 5);
     await page.hover(selector);
     const $$btn = await page.util.$$wait('.share-btn');
-    await page.waitForTimeout(_.random(1000, 3000));
+    await page.util.wt(1, 3);
     logger.debug('点击分享按钮');
     await $$btn[_.random(1, 4)].click();
     const { x, y } = await $$btn[4].boundingBox();
@@ -33,7 +33,7 @@ export default async function shareVideo(
     const target = await page
       .browser()
       .waitForTarget(x => x.url().length > 500 && x.url().includes('share'));
-    await page.waitForTimeout(_.random(4000, 7000));
+    await page.util.wt(4, 7);
 
     logger.trace('尝试关闭分享窗口');
     // ppeteer-extra-plugin-stealth 会报错

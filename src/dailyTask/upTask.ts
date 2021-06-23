@@ -48,7 +48,7 @@ export class UPTask {
       return;
     }
     /** 稿件获取 */
-    await this.page.waitForTimeout(_.random(2000, 5000));
+    await this.page.util.wt(2, 5);
     const nums = await this.getContributeItem();
     if (nums.every(num => num === 0)) {
       logger.info('没有可操作稿件');
@@ -56,7 +56,7 @@ export class UPTask {
       return;
     }
     await this.changeContributeType(nums);
-    await this.page.waitForTimeout(_.random(1000, 3000));
+    await this.page.util.wt(1, 3);
 
     //不直接return是因为只能要做统一的关闭页面
     let isStopCoin = true;
@@ -112,7 +112,7 @@ export class UPTask {
     if (this.contributeType !== 0) {
       await this.$$[this.contributeType || 0].click({ delay: 200 });
     }
-    await this.page.waitForTimeout(_.random(2000, 5000));
+    await this.page.util.wt(2, 5);
   }
 
   async closeUpPage() {
@@ -238,12 +238,12 @@ export class UPTask {
     if (DailyTask.money < 1) {
       return false;
     }
-    await this.page.waitForTimeout(_.random(4000, 8000));
+    await this.page.util.wt(4, 8);
     //投稿页面一页将会有30或者12个(专栏),然后分页
     const { pageNum, num } = paginationSelect(this.contributeNum, pageSize);
     //跳转
     await paginationToJump(this.page, pageNum, logger);
-    await this.page.waitForTimeout(2000);
+    await this.page.util.wt(2);
     //获取所有元素并打印信息
     const $$item = await this.page.util.$$wait(itemSelector);
     const { title, id } = await this.getContributeId($$item[num]);
@@ -279,12 +279,12 @@ export class UPTask {
       });
       throw error;
     }
-    await this.page.waitForTimeout(2000);
+    await this.page.util.wt(2);
     return true;
   }
 
   async videoHandle(): Promise<boolean> {
-    await this.page.waitForTimeout(3000);
+    await this.page.util.wt(3);
     await playVideo(this.page, logger);
     const videoUrl = this.page.url();
     if (videoUrl.includes('//www.bilibili.com/bangumi')) {
@@ -387,7 +387,7 @@ export class UPTask {
       logger.info('到达保留硬币界限：', DailyTask.STAY_COINS);
       return true;
     }
-    await this.page.waitForTimeout(_.random(2000, 4000));
+    await this.page.util.wt(2, 4);
     if (
       parseInt(DailyTask.money?.toString()) === 1 ||
       (exp === 40 && this.contributeType !== Contribute['专栏'])

@@ -4,6 +4,10 @@
 
 ## 说用说明
 
+**玩玩可以，别当真**
+**随便写的，在经过一段时间的使用后发现很多问题，所以决定不再进行更新了**  
+**`docker`中运行出现的问题，开发时完全没有遇到过，又难以在开发情况下复现**
+
 [获取 Docker 镜像](https://registry.hub.docker.com/repository/docker/catlair/bilitaskpuppeteer) `catlair/bilitaskpuppeteer:latest`
 
 ### 支持的功能
@@ -60,18 +64,6 @@
 
 1. 试图拦截 request 直接修改某些请求，实际上 puppeteer 不支持串行的拦截，导致此行为和第三方的包有所冲突
    <https://github.com/puppeteer/puppeteer/pull/6735> `puppeteer@10.0.0` 删除了相关 flag <https://github.com/puppeteer/puppeteer/releases/tag/v10.0.0>
-
-## 责任声明
-
-1. 本项目旨在学习 Docker 的使用，若存在损害您合法权益的内容，请联系本人处理（hub 主页有邮箱）。
-2. bug 是不可避免的，我们尽量减少 bug 所带来得损失，但**这并不意味着我们要为此负责**，选择权在您，望周知。
-3. 使用 Bilibili （以下简称 b 站） 进行测试，不会提供的内容包括但不限于 b 站抢辣条、转发抽奖、下载 VIP 视频等内容，请在阅读代码后删除源码及相关工具。
-4. 不会以任何方式收集用户 ID、cookie、关注列表、收藏记录等信息。
-5. 任何方式的 cookie 泄露都与我无关。**请不要将 cookie 上传到 Github 等开放平台以及其他任何不可信平台**。
-6. 除仓库和[本仓库 Docker 镜像](https://registry.hub.docker.com/repository/docker/catlair/bilitaskpuppeteer)，其余皆与本人无关。
-7. Docker 中的镜像由 Actions 直接构建，可以查看 Actions 中返回的 `hash` 进行对比。**若 `hash` 值不一致则与本仓库无关**。
-8. 本参考只使用 Actions 进行 Docker 构建、项目测试等操作。**请您务必遵守 Github 服务条款，不要滥用 Actions 工作流**。
-9. 仓库中不含本人任何 b 站相关信息，**任何您不清楚的投币、充电、打赏都与本仓库无关**。
 
 ## 参考项目
 

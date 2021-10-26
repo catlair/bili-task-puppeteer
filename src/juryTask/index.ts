@@ -1,4 +1,4 @@
-import createbBrowser from '../createbBrowser';
+import createbBrowser from '../createBrowser';
 import { getLogger } from 'log4js';
 import * as _ from 'lodash';
 import { getCookies } from '../utils';

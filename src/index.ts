@@ -11,7 +11,7 @@ import {
 } from './dailyTask';
 import { juryTask } from './juryTask';
 import { getCookies, getVersion } from './utils';
-import createBrowser from './createbBrowser';
+import createBrowser from './createBrowser';
 import * as log4js from 'log4js';
 
 log4js.configure(log4jsConfig);

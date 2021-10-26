@@ -26,8 +26,10 @@ puppeteer
 export default async function (): Promise<Browser> {
   //@ts-ignore
   return puppeteer.launch({
-    headless: process.env.HEADLESS?.toLowerCase() !== 'false',
-    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+    headless: false || process.env.HEADLESS?.toLowerCase() !== 'false',
+    executablePath:
+      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe' ||
+      process.env.PUPPETEER_EXECUTABLE_PATH,
     defaultViewport: {
       width: 1500,
       height: 700,

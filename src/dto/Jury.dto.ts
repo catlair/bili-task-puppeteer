@@ -27,7 +27,7 @@ export interface JuryVoteOpinionDto extends ApiAbstract {
 /**
  * 众议意见
  */
-export interface JuryInfo extends ApiAbstract {
+export interface JuryInfoDto extends ApiAbstract {
   data: {
     uname: string;
     face: string;
@@ -36,4 +36,14 @@ export interface JuryInfo extends ApiAbstract {
     /** 1 */
     status: number;
   };
+}
+
+/**
+ * 下一个众议
+ */
+export interface NextCaseDto extends ApiAbstract {
+  /** 25008 暂时没有 25014 今日已完成 */
+  code: 25014 | 25008 | 0;
+  message: string;
+  ttl: number;
 }

@@ -1,8 +1,8 @@
-import { Page } from 'puppeteer-core';
+import { HTTPResponse, Page } from 'puppeteer-core';
 import * as _ from 'lodash';
 import { getLogger } from 'log4js';
 
-import { JuryInfo, JuryVoteOpinionDto } from '../dto/Jury.dto';
+import { JuryInfoDto, JuryVoteOpinionDto, NextCaseDto } from '../dto/Jury.dto';
 
 const logger = getLogger('jury');
 
@@ -24,6 +24,7 @@ class Judgement {
     this.page = page;
     //1 继续 -1 没有了 0 完成了
     this.isRun = 1;
+    this.addNextEvent();
   }
 
   async init() {
@@ -46,12 +47,30 @@ class Judgement {
     return this.isRun;
   }
 
+  /** 完成检测 */
+  async addNextEvent() {
+    this.page.on('response', async (res: HTTPResponse) => {
+      if (!res.url().includes('credit/v2/jury/case/next')) {
+        return;
+      }
+      try {
+        const { code } = (await res.json()) as NextCaseDto;
+        if (code === 25014) {
+          this.isRun = 0;
+        } else if (code === 25008) {
+          this.isRun = -1;
+        }
+      } catch (error) {}
+    });
+  }
+
   async doVote() {
     const list = await this.getJuryCaseInfo();
-    await this.randomHandle();
+    if (this.isRun !== 1) return;
+    // await this.randomHandle();
     const voteNum = this.calcOfVoting(list);
     logger.debug(`选择项：${voteNum}`);
-    await this.page.util.wt(8, 12);
+    await this.page.util.wt(6, 9);
     await this.voteHandle(voteNum);
     await this.page.util.wt(2, 3);
     await this.submitHandle();
@@ -60,10 +79,12 @@ class Judgement {
   async randomHandle() {
     await this.page.util.wt(1, 3);
     try {
-      await this.page.util.evalClick(
-        '.bilibili-player-video-control .bilibili-player-video-control-bottom .bilibili-player-video-control-bottom-left .bilibili-player-video-btn button',
-      );
-    } catch (error) {}
+      await this.page.util.evalClick('.bilibili-player-video', {
+        timeout: 2000,
+      });
+    } catch (error) {
+      console.log(error.message);
+    }
   }
 
   async voteHandle(n: number) {
@@ -120,19 +141,34 @@ class Judgement {
       const callHandle = this.isHomePage
         ? this.clickStartBtn.bind(this)
         : this.goNext.bind(this);
-      let [juryVoteOpinion] = await Promise.all([
-        this.page.waitForResponse(res =>
-          res.url().includes('/jury/case/opinion?case_id='),
-        ),
-        callHandle(),
-      ]);
 
+      const getJuryInfo = async () => {
+        try {
+          return this.page.waitForResponse(
+            res => res.url().includes('/jury/case/opinion?case_id='),
+            {
+              timeout: 5000,
+            },
+          );
+        } catch (error) {}
+        return null;
+      };
+
+      let [juryVoteOpinion] = await Promise.all([getJuryInfo(), callHandle()]);
+
+      if (this.isRun !== 1) return;
       this.isHomePage = false;
 
       // 获得最基本的 5 个
       let {
         data: { list },
       } = (await juryVoteOpinion.json()) as JuryVoteOpinionDto;
+
+      // 大于三个才有更多
+      if (list.length < 3) {
+        await this.page.util.wt(6, 9);
+        return list;
+      }
 
       try {
         await this.page.util.wt(1, 3);
@@ -179,12 +215,11 @@ class Judgement {
         // 关闭弹窗
         await this.page.util.evalClick(
           '.v-dialog.b-dialog .v-dialog__wrap .v-dialog__header h2',
+          { timeout: 5000 },
         );
 
         list = data.list;
-      } catch (error) {
-        console.log(error);
-      }
+      } catch (error) {}
 
       return list;
     } catch (error) {
@@ -236,7 +271,7 @@ class Judgement {
   async clickStartBtn() {
     logger.debug('开始第一个');
     return await this.page.util.clickWaitForNavigation(
-      'div.item-info > div.item-button > button',
+      '.item-info .item-button button',
     );
   }
 
@@ -247,7 +282,7 @@ class Judgement {
       .then(async res => {
         const {
           data: { status },
-        } = (await res.json()) as JuryInfo;
+        } = (await res.json()) as JuryInfoDto;
         if (status !== 1) {
           logger.info('用户个人信息异常');
           this.isRun = 0;
